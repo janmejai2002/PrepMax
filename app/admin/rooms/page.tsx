@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { BottomNav } from '@/components/nav/bottom-nav'
 import RoomsClient from './rooms-client'
 
 export default async function RoomsAdminPage() {
@@ -12,11 +13,12 @@ export default async function RoomsAdminPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('is_crisp_admin')
+    .select('is_crisp_admin, is_sac')
     .eq('id', user.id)
     .single()
 
-  if (!profile?.is_crisp_admin) redirect('/')
+  // Mirrors can_manage_rooms() in the DB — SAC and CRISP admin both manage rooms
+  if (!profile?.is_crisp_admin && !profile?.is_sac) redirect('/')
 
   const { data: rooms } = await supabase
     .from('rooms')
@@ -24,7 +26,7 @@ export default async function RoomsAdminPage() {
     .order('name')
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-nav">
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
         <div>
           <h1 className="text-xl font-bold">Rooms</h1>
@@ -34,6 +36,7 @@ export default async function RoomsAdminPage() {
         </div>
         <RoomsClient initialRooms={rooms ?? []} />
       </div>
+      <BottomNav isAdmin />
     </div>
   )
 }

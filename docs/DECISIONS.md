@@ -106,6 +106,24 @@
 
 ---
 
+## 2026-06-10 — host_directory view for feed host info
+
+**Decision:** Juniors' profile RLS stays self-read-only. The slots feed gets host names + WhatsApp numbers via a `host_directory` view (owner-rights, `security_invoker = off`) that exposes only id/name/year/whatsapp/host-flags of users who can host. Granted to `authenticated` only.
+
+**Why:** The feed must show who's hosting, and the post-join WhatsApp button is a core flow — but opening up the whole profiles table to all users would leak junior personal data. A column-scoped, row-filtered view gives exactly the public surface and nothing else.
+
+**Alternatives rejected:** (a) Loosening profiles RLS — leaks junior data. (b) Duplicating host info onto slot rows — denormalized copy goes stale on profile edits.
+
+---
+
+## 2026-06-10 — Design language locked
+
+**Decision:** Dark mode default, Geist font, tinted near-black palette (oklch hue 261), GD = indigo / PI = amber as left-accent + badge + seat-meter colors, status colors (success green / warn amber / live pulsing red), rounded-full controls, glassy backdrop-blur sticky surfaces, bottom tab bar. Cards are calm dark surfaces — color carries meaning, never decoration.
+
+**Why:** Hostel-room night usage, instant GD/PI recognition at a glance (spec C2), and a premium feel that doesn't look AI-generic.
+
+---
+
 ## Open Decisions (to surface at the relevant phase)
 
 1. **Auth domain restriction** (Phase 1): Restrict signups to institute Google domain? → Ask Janmejai

@@ -5,7 +5,7 @@
 ---
 
 ## Current Phase
-**Phase 1 — Auth + Identity + Rooms — COMPLETE. Ready for Phase 2.**
+**Phase 2 — Crown Jewel — IN PROGRESS. join_slot RPC + slots feed UI done; leave/cancel/edit RPCs + hosting form + /stress remaining.**
 
 ## Status
 
@@ -33,6 +33,15 @@
 | Vercel deploy | ✅ Done | https://prep-max-alpha.vercel.app |
 | Vercel env vars | ✅ Done | NEXT_PUBLIC_SUPABASE_URL, ANON_KEY, ALLOWED_EXCEPTION_EMAILS, SERVICE_ROLE_KEY |
 | GitHub repo | ✅ Done | https://github.com/janmejai2002/PrepMax — preview deploys on every push |
+| Migration 004 | ✅ Done | slots + slot_judges + enrollments + room_status view + join_slot RPC — applied |
+| Migration 005 | ✅ Done | host_directory view (public host info for feed) + slots in realtime publication — applied |
+| join_slot RPC | ✅ Done | Atomic SELECT…FOR UPDATE; 8/8 Vitest tests (15/15 total) |
+| Slots feed UI | ✅ Done | Home page: GD/PI cards, search, All/GD/PI filter, join + waitlist, WhatsApp deep link, realtime seat counts, skeletons, empty states. Verified at 390px with Playwright incl. live join + waitlist + realtime test |
+| Design tokens | ✅ Done | GD=indigo, PI=amber, success/warn, tinted dark palette, pulse-dot animation — in globals.css |
+| Bottom tab bar | ✅ Done | Slots/Knowledge/Doubts/Profile (+Admin for CRISP/SAC), glassy blur, safe-area aware |
+| Stub pages | ✅ Done | /knowledge, /doubts (coming-soon), /profile (real data + sign out) |
+| Demo slots | ✅ Done | 7 seeded slots (4 GD + 3 PI), varied fill states, clean IST evening times |
+| Supabase Site URL | ✅ Done | Fixed by Janmejai — Vercel magic links no longer redirect to localhost |
 
 ## Test accounts
 | Email | Year | Flags | Purpose |
@@ -53,14 +62,12 @@ Magic link works right now without any extra config.
 - **Middleware deprecation warning** at build time: `"middleware" file convention is deprecated, use "proxy" instead` — this is a Next.js 16 cosmetic warning only; routing works correctly. Will rename to `proxy.ts` in Phase 2 if it becomes a blocker.
 - **Seed counter display bug**: `seed.ts` logs "0 fake profiles seeded" due to a closure quirk in parallel batches, but all 202 rows are confirmed in the DB. Non-blocking.
 
-## Exact Next Step for Claude — Phase 2
-1. Rename `middleware.ts` → `proxy.ts` (Next.js 16 convention) if it causes warnings in prod.
-2. Create migration 004: `slots`, `enrollments`, `slot_judges` tables + RLS. (was 003 — shifted by SAC migration)
-3. Implement `join_slot` atomic Postgres RPC (Iron Rule #1: SELECT...FOR UPDATE, no app-side read-write).
-4. Build slots feed UI (home page): GD/PI cards, segmented filter, real-time seat counts via Supabase Realtime.
-5. Build hosting form — uses `room_status` view so host sees offline/live-available/live-occupied per room.
-6. Run `/stress` load test: 100 concurrent joins on a 6-seat slot → exactly 6 confirmed, 94 waitlisted, 0 oversell.
-7. Leave `leave_slot`, `cancel_slot`, `edit_slot` RPCs for Phase 2 as well.
+## Exact Next Step for Claude — Phase 2 (remaining)
+1. Build hosting form — sheet/drawer for capable seniors; uses `room_status` view (offline/live-available/live-occupied per room); add co-judges.
+2. Implement `leave_slot` (auto-promote waitlist head atomically), `cancel_slot`, `edit_slot` (optimistic lock on version) RPCs + tests.
+3. Run `/stress` load test: 100 concurrent joins on a 6-seat slot → exactly 6 confirmed, 94 waitlisted in order, 0 oversell.
+4. Rename `middleware.ts` → `proxy.ts` (Next.js 16 convention) if it causes warnings in prod.
+5. Nice-to-have: slot detail view, "My slots" section/tab showing joined + waitlisted slots.
 
 ## Session Log
 | Date | What happened |
@@ -70,3 +77,4 @@ Magic link works right now without any extra config.
 | 2026-06-10 | Session 2 (Phase 1): Supabase project created (Mumbai). Migrations 001+002 applied. Auth flow (Google + magic link, domain-restricted). /onboarding, /admin/rooms. 202 seed rows. 6/6 RLS tests passing. Vercel live at https://prep-max-alpha.vercel.app. |
 | 2026-06-10 | Session 3: Edit room feature added to /admin/rooms. SAC role + room 3-state model designed. Migration 003 written (is_sac, can_manage_rooms, room_status view) — awaits apply. DECISIONS.md updated with SAC, 3-state model, CRISP clarification. |
 | 2026-06-10 | Session 4: Migration 003 applied (is_sac + can_manage_rooms + rewired room RLS). room_status view deferred to 004 (needs slots). b25349 seeded with is_sac=true. RLS tests 7/7. Phase 2 slots work begins. |
+| 2026-06-10 | Session 4 (cont.): Migration 004 (slots/enrollments/join_slot) + 005 (host_directory + realtime). 15/15 tests. Playwright UI audit found Supabase Site URL bug (localhost redirect) — Janmejai fixed in dashboard. **Slots feed UI shipped**: premium dark design, GD-indigo/PI-amber tokens, search + filter, join/waitlist flows verified live in browser, realtime seat counts confirmed, bottom tab bar, profile page, stub tabs. 7 demo slots seeded. |
