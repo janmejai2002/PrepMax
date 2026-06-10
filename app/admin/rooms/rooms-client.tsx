@@ -16,7 +16,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import { Plus } from 'lucide-react'
+import { Plus, Pencil } from 'lucide-react'
 
 interface Room {
   id: string
@@ -30,11 +30,64 @@ interface Props {
   initialRooms: Room[]
 }
 
+type RoomForm = { name: string; location: string; capacity: string }
+
+function RoomFormFields({
+  values,
+  onChange,
+  idPrefix,
+}: {
+  values: RoomForm
+  onChange: (patch: Partial<RoomForm>) => void
+  idPrefix: string
+}) {
+  return (
+    <>
+      <div className="space-y-1.5">
+        <Label htmlFor={`${idPrefix}-name`}>Name</Label>
+        <Input
+          id={`${idPrefix}-name`}
+          placeholder="Room 101 — MDC Block"
+          value={values.name}
+          onChange={(e) => onChange({ name: e.target.value })}
+          required
+          className="h-11"
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor={`${idPrefix}-loc`}>Location</Label>
+        <Input
+          id={`${idPrefix}-loc`}
+          placeholder="MDC Block, Ground Floor"
+          value={values.location}
+          onChange={(e) => onChange({ location: e.target.value })}
+          className="h-11"
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor={`${idPrefix}-cap`}>Capacity</Label>
+        <Input
+          id={`${idPrefix}-cap`}
+          type="number"
+          min="1"
+          value={values.capacity}
+          onChange={(e) => onChange({ capacity: e.target.value })}
+          className="h-11"
+        />
+      </div>
+    </>
+  )
+}
+
 export default function RoomsClient({ initialRooms }: Props) {
   const [rooms, setRooms] = useState<Room[]>(initialRooms)
-  const [open, setOpen] = useState(false)
+
+  const [addOpen, setAddOpen] = useState(false)
   const [adding, setAdding] = useState(false)
-  const [newRoom, setNewRoom] = useState({ name: '', location: '', capacity: '20' })
+  const [newRoom, setNewRoom] = useState<RoomForm>({ name: '', location: '', capacity: '20' })
+
+  const [editRoom, setEditRoom] = useState<Room | null>(null)
+  const [saving, setSaving] = useState(false)
 
   const supabase = createClient()
 
@@ -44,10 +97,7 @@ export default function RoomsClient({ initialRooms }: Props) {
       .update({ is_live: !room.is_live })
       .eq('id', room.id)
 
-    if (error) {
-      toast.error('Could not update room.')
-      return
-    }
+    if (error) { toast.error('Could not update room.'); return }
 
     setRooms((prev) =>
       prev.map((r) => (r.id === room.id ? { ...r, is_live: !r.is_live } : r))
@@ -72,7 +122,6 @@ export default function RoomsClient({ initialRooms }: Props) {
       .single()
 
     setAdding(false)
-
     if (error) {
       toast.error(error.message.includes('unique') ? 'A room with that name already exists.' : 'Could not add room.')
       return
@@ -80,14 +129,44 @@ export default function RoomsClient({ initialRooms }: Props) {
 
     setRooms((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
     setNewRoom({ name: '', location: '', capacity: '20' })
-    setOpen(false)
+    setAddOpen(false)
     toast.success(`${data.name} added.`)
+  }
+
+  async function saveEdit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editRoom) return
+    setSaving(true)
+
+    const { data, error } = await supabase
+      .from('rooms')
+      .update({
+        name: editRoom.name.trim(),
+        location: editRoom.location?.trim() || null,
+        capacity: editRoom.capacity,
+      })
+      .eq('id', editRoom.id)
+      .select()
+      .single()
+
+    setSaving(false)
+    if (error) {
+      toast.error(error.message.includes('unique') ? 'A room with that name already exists.' : 'Could not save changes.')
+      return
+    }
+
+    setRooms((prev) =>
+      prev.map((r) => (r.id === data.id ? { ...r, ...data } : r))
+        .sort((a, b) => a.name.localeCompare(b.name))
+    )
+    setEditRoom(null)
+    toast.success('Room updated.')
   }
 
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger render={<Button size="sm" className="gap-1.5" />}>
             <Plus className="h-4 w-4" />
             Add room
@@ -97,38 +176,11 @@ export default function RoomsClient({ initialRooms }: Props) {
               <DialogTitle>Add room</DialogTitle>
             </DialogHeader>
             <form onSubmit={addRoom} className="space-y-4 pt-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="rname">Name</Label>
-                <Input
-                  id="rname"
-                  placeholder="Room 101 — MDC Block"
-                  value={newRoom.name}
-                  onChange={(e) => setNewRoom((p) => ({ ...p, name: e.target.value }))}
-                  required
-                  className="h-11"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="rloc">Location</Label>
-                <Input
-                  id="rloc"
-                  placeholder="MDC Block, Ground Floor"
-                  value={newRoom.location}
-                  onChange={(e) => setNewRoom((p) => ({ ...p, location: e.target.value }))}
-                  className="h-11"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="rcap">Capacity</Label>
-                <Input
-                  id="rcap"
-                  type="number"
-                  min="1"
-                  value={newRoom.capacity}
-                  onChange={(e) => setNewRoom((p) => ({ ...p, capacity: e.target.value }))}
-                  className="h-11"
-                />
-              </div>
+              <RoomFormFields
+                values={newRoom}
+                onChange={(p) => setNewRoom((prev) => ({ ...prev, ...p }))}
+                idPrefix="add"
+              />
               <Button type="submit" className="w-full" disabled={adding}>
                 {adding ? 'Adding…' : 'Add room'}
               </Button>
@@ -136,6 +188,42 @@ export default function RoomsClient({ initialRooms }: Props) {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Edit dialog — shared, driven by editRoom state */}
+      <Dialog open={!!editRoom} onOpenChange={(o) => { if (!o) setEditRoom(null) }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit room</DialogTitle>
+          </DialogHeader>
+          {editRoom && (
+            <form onSubmit={saveEdit} className="space-y-4 pt-2">
+              <RoomFormFields
+                values={{
+                  name: editRoom.name,
+                  location: editRoom.location ?? '',
+                  capacity: String(editRoom.capacity),
+                }}
+                onChange={(p) =>
+                  setEditRoom((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          name: p.name ?? prev.name,
+                          location: p.location ?? prev.location,
+                          capacity: p.capacity !== undefined ? (parseInt(p.capacity) || prev.capacity) : prev.capacity,
+                        }
+                      : prev
+                  )
+                }
+                idPrefix="edit"
+              />
+              <Button type="submit" className="w-full" disabled={saving}>
+                {saving ? 'Saving…' : 'Save changes'}
+              </Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {rooms.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-8">
@@ -157,11 +245,21 @@ export default function RoomsClient({ initialRooms }: Props) {
                 {room.location ?? '—'} · {room.capacity} seats
               </p>
             </div>
-            <Switch
-              checked={room.is_live}
-              onCheckedChange={() => toggleLive(room)}
-              aria-label={`Toggle ${room.name}`}
-            />
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                onClick={() => setEditRoom(room)}
+                aria-label={`Edit ${room.name}`}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Switch
+                checked={room.is_live}
+                onCheckedChange={() => toggleLive(room)}
+                aria-label={`Toggle ${room.name}`}
+              />
+            </div>
           </CardContent>
         </Card>
       ))}

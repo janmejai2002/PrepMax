@@ -70,6 +70,42 @@
 
 ---
 
+## 2026-06-10 — SAC Role (Student Activities Council)
+
+**Decision:** Add `is_sac boolean NOT NULL DEFAULT false` capability flag to profiles. SAC accounts can: add rooms, toggle is_live, allot rooms to slots, and trigger broadcast email to all seniors when rooms go live.
+
+**Why:** Room management should belong to a student-government role (SAC), not the CRISP mentoring committee. Separating the two keeps CRISP focused on mentorship and SAC focused on logistics. Both SAC and CRISP admin can manage rooms (union permission via `can_manage_rooms()` helper).
+
+**Alternatives rejected:**
+- Merging SAC duties into is_crisp_admin: conflates logistics with mentoring; CRISP members don't need room keys
+- Separate rooms_admin role: unnecessary — SAC is the real-world authority for room allocation at XLRI
+
+---
+
+## 2026-06-10 — Room 3-State Model
+
+**Decision:** Rooms have three observable states: `offline` (is_live=false), `live_available` (is_live=true, no active slot), `live_occupied` (is_live=true, has a slot with status in open/full/live whose time window includes now). No new column needed — occupied is derived from the slots table at query time. Exposed via `room_status` view (Migration 003).
+
+**Why:** Seniors need to see at a glance which live rooms are still free when choosing a room to host a session. The third state prevents double-booking from two hosts picking the same room simultaneously. The derived approach avoids denormalization and stays consistent without triggers.
+
+**Implementation:** `room_status` view joins rooms → slots on current time window. Used by hosting form (Phase 2). Slot status column drives the occupied flag — no additional migration needed when slots table lands.
+
+---
+
+## 2026-06-10 — CRISP Redefined as Mentor Cohort System
+
+**Decision:** CRISP accounts are dedicated mentor-cohort managers. A CRISP account selects a set of mentors from the senior pool, then has a 360° dashboard per mentee showing: sessions attended, feedback received, speaking stats, review scores. CRISP does NOT manage rooms (that's SAC).
+
+**Why:** The original is_crisp_admin flag was used as a catch-all admin. Splitting it out makes roles clear and avoids CRISP members accidentally toggling rooms offline. The mentee-management dashboard is a Phase 5 feature.
+
+**Phase placement:**
+- `is_sac` flag + room RLS: Migration 003 (done)
+- SAC room management UI (allot room to slot): Phase 2
+- Broadcast email to seniors when room goes live: Phase 4 (outbox pattern, Iron Rule #4)
+- CRISP mentee selection + 360° dashboard: Phase 5
+
+---
+
 ## Open Decisions (to surface at the relevant phase)
 
 1. **Auth domain restriction** (Phase 1): Restrict signups to institute Google domain? → Ask Janmejai

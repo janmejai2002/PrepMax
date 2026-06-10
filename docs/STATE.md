@@ -20,7 +20,8 @@
 | .env.local | ✅ Done | URL + anon key + service role key + exception emails |
 | Migration 001 | ✅ Done | profiles + rooms tables |
 | Migration 002 | ✅ Done | RLS recursion fix — SECURITY DEFINER helper functions |
-| RLS policies | ✅ Done | 9 policies; `is_crisp_admin()` + `get_capability_flags()` helpers |
+| Migration 003 | ✅ Written | `is_sac` flag + `can_manage_rooms()` + `room_status` view — **needs `apply_migration` in next session** |
+| RLS policies | ✅ Done | 9 policies; `is_crisp_admin()` + `get_capability_flags()` + `can_manage_rooms()` helpers |
 | RLS tests | ✅ Done | 6/6 passing (`npm run test:rls`) |
 | Supabase Auth | ⚠️ Partial | Magic link ready. Google OAuth needs Client ID/Secret in Supabase dashboard |
 | Seed data | ✅ Done | 202 profiles (2 test + 200 Faker) · 5 rooms |
@@ -37,7 +38,7 @@
 | Email | Year | Flags | Purpose |
 |---|---|---|---|
 | `killgod.obsidian@gmail.com` | first | none | Junior test account |
-| `b25349@astra.xlri.ac.in` | second | all ON (host GD/PI, mentor, committee, crisp_admin) | Senior/admin test account |
+| `b25349@astra.xlri.ac.in` | second | all ON (host GD/PI, mentor, committee, crisp_admin, **is_sac**) | Senior/admin test account |
 
 ## One action still needed from Janmejai
 **Google OAuth** — to sign in with Google (not just magic link), add credentials to Supabase:
@@ -53,11 +54,12 @@ Magic link works right now without any extra config.
 - **Seed counter display bug**: `seed.ts` logs "0 fake profiles seeded" due to a closure quirk in parallel batches, but all 202 rows are confirmed in the DB. Non-blocking.
 
 ## Exact Next Step for Claude — Phase 2
+0. **Apply Migration 003 first** (`mcp__supabase__apply_migration` with project `fzohmolumyfupffkbxug`). Update seed so `b25349@astra.xlri.ac.in` gets `is_sac: true`. Re-run `npm run test:rls` (add SAC room-management test).
 1. Rename `middleware.ts` → `proxy.ts` (Next.js 16 convention) if it causes warnings in prod.
-2. Create migration 003: `slots`, `enrollments`, `slot_judges` tables + RLS.
+2. Create migration 004: `slots`, `enrollments`, `slot_judges` tables + RLS. (was 003 — shifted by SAC migration)
 3. Implement `join_slot` atomic Postgres RPC (Iron Rule #1: SELECT...FOR UPDATE, no app-side read-write).
 4. Build slots feed UI (home page): GD/PI cards, segmented filter, real-time seat counts via Supabase Realtime.
-5. Build hosting form.
+5. Build hosting form — uses `room_status` view so host sees offline/live-available/live-occupied per room.
 6. Run `/stress` load test: 100 concurrent joins on a 6-seat slot → exactly 6 confirmed, 94 waitlisted, 0 oversell.
 7. Leave `leave_slot`, `cancel_slot`, `edit_slot` RPCs for Phase 2 as well.
 
@@ -67,3 +69,4 @@ Magic link works right now without any extra config.
 | 2026-06-10 | Session 0: full bootstrap. Next.js 16 + shadcn + Vitest + Playwright + GitHub repo. |
 | 2026-06-10 | Session 1: Supabase MCP auth. GitHub MCP (user scope). Version lock confirmed. Phase 0 → 100%. |
 | 2026-06-10 | Session 2 (Phase 1): Supabase project created (Mumbai). Migrations 001+002 applied. Auth flow (Google + magic link, domain-restricted). /onboarding, /admin/rooms. 202 seed rows. 6/6 RLS tests passing. Vercel live at https://prep-max-alpha.vercel.app. |
+| 2026-06-10 | Session 3: Edit room feature added to /admin/rooms. SAC role + room 3-state model designed. Migration 003 written (is_sac, can_manage_rooms, room_status view) — awaits apply. DECISIONS.md updated with SAC, 3-state model, CRISP clarification. |
