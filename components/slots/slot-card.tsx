@@ -1,21 +1,53 @@
 'use client'
 
 import { useState } from 'react'
-import { Clock, MapPin, MessageCircle, Loader2 } from 'lucide-react'
+import {
+  Clock,
+  MapPin,
+  MessageCircle,
+  Loader2,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  LogOut,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { formatSlotTime, waPhone, initials } from '@/lib/format'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { EditSlotSheet } from './edit-slot-sheet'
 import type { FeedSlot, Me } from '@/lib/types'
 
 interface SlotCardProps {
   slot: FeedSlot
   me: Me
+  canManage: boolean
   onSlotChange: (slot: FeedSlot) => void
+  onSlotRemoved: (slotId: string) => void
 }
 
-export function SlotCard({ slot, me, onSlotChange }: SlotCardProps) {
+export function SlotCard({ slot, me, canManage, onSlotChange, onSlotRemoved }: SlotCardProps) {
   const [joining, setJoining] = useState(false)
+  const [leaving, setLeaving] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [confirmCancel, setConfirmCancel] = useState(false)
   const supabase = createClient()
 
   const isGD = slot.type === 'GD'
@@ -23,6 +55,8 @@ export function SlotCard({ slot, me, onSlotChange }: SlotCardProps) {
   const isFull = slot.status === 'full' || seatsLeft <= 0
   const isLive = slot.status === 'live'
   const enrollment = slot.my_enrollment
+  const isOwnSlot = slot.host_id === me.id
+  const canManageThis = isOwnSlot || canManage
 
   async function handleJoin() {
     setJoining(true)
@@ -59,6 +93,52 @@ export function SlotCard({ slot, me, onSlotChange }: SlotCardProps) {
     }
   }
 
+  async function handleLeave() {
+    const wasConfirmed = enrollment?.status === 'confirmed'
+    setLeaving(true)
+    const { data, error } = await supabase.rpc('leave_slot', {
+      p_slot_id: slot.id,
+      p_user_id: me.id,
+    })
+    setLeaving(false)
+
+    if (error || data?.error) {
+      toast.error('Could not leave the slot — try again.')
+      return
+    }
+
+    // A confirmed leaver with no waitlist behind them frees the seat.
+    const seatFreed = wasConfirmed && data.seat_freed
+    onSlotChange({
+      ...slot,
+      my_enrollment: null,
+      enrolled_count: seatFreed ? slot.enrolled_count - 1 : slot.enrolled_count,
+      status: seatFreed && slot.status === 'full' ? 'open' : slot.status,
+    })
+    toast.success(wasConfirmed ? 'You gave up your seat.' : 'You left the waitlist.')
+  }
+
+  async function handleCancel() {
+    setCancelling(true)
+    const { data, error } = await supabase.rpc('cancel_slot', { p_slot_id: slot.id })
+    setCancelling(false)
+    setConfirmCancel(false)
+
+    if (error || data?.error) {
+      const msg =
+        data?.error === 'unauthorized'
+          ? "You're not allowed to cancel this slot."
+          : data?.error === 'slot_not_cancellable'
+            ? 'This slot can no longer be cancelled.'
+            : 'Could not cancel the slot — try again.'
+      toast.error(msg)
+      return
+    }
+
+    toast.success('Slot cancelled — enrolled juniors have been released.')
+    onSlotRemoved(slot.id)
+  }
+
   const whatsappUrl = (() => {
     const phone = waPhone(slot.host?.whatsapp ?? null)
     if (!phone) return null
@@ -78,12 +158,7 @@ export function SlotCard({ slot, me, onSlotChange }: SlotCardProps) {
       )}
     >
       {/* type identity accent */}
-      <div
-        className={cn(
-          'absolute inset-y-0 left-0 w-[3px]',
-          isGD ? 'bg-gd' : 'bg-pi'
-        )}
-      />
+      <div className={cn('absolute inset-y-0 left-0 w-[3px]', isGD ? 'bg-gd' : 'bg-pi')} />
 
       <div className="space-y-3 p-4 pl-5">
         {/* header row */}
@@ -101,7 +176,7 @@ export function SlotCard({ slot, me, onSlotChange }: SlotCardProps) {
               {slot.internship}
             </span>
           )}
-          <span className="ml-auto shrink-0">
+          <div className="ml-auto flex shrink-0 items-center gap-1">
             {isLive ? (
               <span className="flex items-center gap-1.5 rounded-full bg-destructive/10 px-2.5 py-1 text-[11px] font-semibold text-destructive">
                 <span className="h-1.5 w-1.5 rounded-full bg-destructive animate-pulse-dot" />
@@ -116,7 +191,31 @@ export function SlotCard({ slot, me, onSlotChange }: SlotCardProps) {
                 {seatsLeft} {seatsLeft === 1 ? 'seat' : 'seats'} left
               </span>
             ) : null}
-          </span>
+
+            {canManageThis && (
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  aria-label="Manage slot"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setEditOpen(true)}>
+                    <Pencil className="h-4 w-4" />
+                    Edit slot
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={() => setConfirmCancel(true)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Cancel slot
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
 
         {/* topic */}
@@ -158,11 +257,7 @@ export function SlotCard({ slot, me, onSlotChange }: SlotCardProps) {
                 key={i}
                 className={cn(
                   'h-1 flex-1 rounded-full transition-colors',
-                  i < slot.enrolled_count
-                    ? isGD
-                      ? 'bg-gd'
-                      : 'bg-pi'
-                    : 'bg-muted'
+                  i < slot.enrolled_count ? (isGD ? 'bg-gd' : 'bg-pi') : 'bg-muted'
                 )}
               />
             ))}
@@ -185,13 +280,17 @@ export function SlotCard({ slot, me, onSlotChange }: SlotCardProps) {
             </span>
             <div className="min-w-0">
               <p className="truncate text-xs font-medium">
-                {slot.host?.name ?? 'Senior host'}
+                {isOwnSlot ? 'You' : (slot.host?.name ?? 'Senior host')}
               </p>
               <p className="text-[10px] text-muted-foreground">hosting</p>
             </div>
           </div>
 
-          {enrollment?.status === 'confirmed' ? (
+          {isOwnSlot ? (
+            <span className="rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+              Your slot
+            </span>
+          ) : enrollment?.status === 'confirmed' ? (
             <div className="flex items-center gap-2">
               <span className="rounded-full bg-success/15 px-3 py-1.5 text-xs font-semibold text-success">
                 You&apos;re in ✓
@@ -201,21 +300,45 @@ export function SlotCard({ slot, me, onSlotChange }: SlotCardProps) {
                   href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-9 items-center gap-1.5 rounded-full bg-success/15 px-3 text-xs font-semibold text-success transition-colors hover:bg-success/25"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-success/15 text-success transition-colors hover:bg-success/25"
+                  aria-label="Say hi on WhatsApp"
                 >
-                  <MessageCircle className="h-3.5 w-3.5" />
-                  Say hi
+                  <MessageCircle className="h-4 w-4" />
                 </a>
               )}
+              <button
+                onClick={handleLeave}
+                disabled={leaving}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-60"
+                aria-label="Leave slot"
+              >
+                {leaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <LogOut className="h-4 w-4" />
+                )}
+              </button>
             </div>
           ) : enrollment?.status === 'waitlist' ? (
-            <span className="rounded-full bg-warn/15 px-3 py-1.5 text-xs font-semibold text-warn">
-              Waitlist #{enrollment.position}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-warn/15 px-3 py-1.5 text-xs font-semibold text-warn">
+                Waitlist #{enrollment.position}
+              </span>
+              <button
+                onClick={handleLeave}
+                disabled={leaving}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-60"
+                aria-label="Leave waitlist"
+              >
+                {leaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <LogOut className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           ) : isLive ? (
-            <span className="text-xs font-medium text-muted-foreground">
-              In session
-            </span>
+            <span className="text-xs font-medium text-muted-foreground">In session</span>
           ) : (
             <button
               onClick={handleJoin}
@@ -243,6 +366,50 @@ export function SlotCard({ slot, me, onSlotChange }: SlotCardProps) {
           )}
         </div>
       </div>
+
+      {/* host/admin: edit sheet */}
+      {canManageThis && (
+        <EditSlotSheet
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          slot={slot}
+          onSlotChange={onSlotChange}
+        />
+      )}
+
+      {/* host/admin: cancel confirmation */}
+      <AlertDialog open={confirmCancel} onOpenChange={setConfirmCancel}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel this slot?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {slot.enrolled_count > 0
+                ? `${slot.enrolled_count} junior${slot.enrolled_count === 1 ? '' : 's'} will lose their spot. This can't be undone.`
+                : "This removes the slot from the feed. This can't be undone."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelling}>Keep slot</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault()
+                handleCancel()
+              }}
+              disabled={cancelling}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              {cancelling ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Cancelling…
+                </span>
+              ) : (
+                'Cancel slot'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </article>
   )
 }

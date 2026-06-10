@@ -66,6 +66,11 @@ export function SlotsFeed({
         { event: 'UPDATE', schema: 'public', table: 'slots' },
         (payload) => {
           const next = payload.new as Partial<FeedSlot> & { id: string }
+          // A slot that leaves the joinable states drops out of the live feed.
+          if (next.status === 'cancelled' || next.status === 'completed') {
+            setSlots((prev) => prev.filter((s) => s.id !== next.id))
+            return
+          }
           setSlots((prev) =>
             prev.map((s) =>
               s.id === next.id
@@ -104,6 +109,10 @@ export function SlotsFeed({
 
   function handleSlotChange(updated: FeedSlot) {
     setSlots((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))
+  }
+
+  function handleSlotRemoved(slotId: string) {
+    setSlots((prev) => prev.filter((s) => s.id !== slotId))
   }
 
   function handleSlotCreated(created: FeedSlot) {
@@ -185,7 +194,9 @@ export function SlotsFeed({
               key={slot.id}
               slot={slot}
               me={me}
+              canManage={capabilities.canManageRooms}
               onSlotChange={handleSlotChange}
+              onSlotRemoved={handleSlotRemoved}
             />
           ))
         )}

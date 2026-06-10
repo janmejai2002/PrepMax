@@ -17,6 +17,7 @@ export interface FeedSlot {
   capacity: number
   enrolled_count: number
   status: SlotStatus
+  version: number
   share_slug: string
   room: { name: string; location: string } | null
   host: { id: string; name: string; whatsapp: string | null } | null

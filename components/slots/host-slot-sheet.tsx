@@ -48,9 +48,9 @@ function toLocalInput(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
-function addMinutes(localInput: string, mins: number): string {
-  return toLocalInput(new Date(new Date(localInput).getTime() + mins * 60 * 1000))
-}
+
+// Fixed durations keep end-times sane — no one can fat-finger a 2-day slot.
+const DURATIONS = [30, 40, 60, 90] as const
 
 export function HostSlotSheet({
   open,
@@ -77,7 +77,7 @@ export function HostSlotSheet({
   const [areas, setAreas] = useState<string[]>([])
   const [roomId, setRoomId] = useState('')
   const [startAt, setStartAt] = useState(start0)
-  const [endAt, setEndAt] = useState(addMinutes(start0, 30))
+  const [durationMin, setDurationMin] = useState<number>(30)
   const [capacity, setCapacity] = useState('8')
   const [description, setDescription] = useState('')
   const [gdTypeDesc, setGdTypeDesc] = useState('')
@@ -122,7 +122,7 @@ export function HostSlotSheet({
     setAreas([])
     setRoomId('')
     setStartAt(s)
-    setEndAt(addMinutes(s, 30))
+    setDurationMin(30)
     setCapacity('8')
     setDescription('')
     setGdTypeDesc('')
@@ -137,8 +137,7 @@ export function HostSlotSheet({
     if (topic.trim().length < 3) return toast.error('Give the topic a clearer title.')
     if (!roomId) return toast.error('Pick a room.')
     const startDate = new Date(startAt)
-    const endDate = new Date(endAt)
-    if (!(endDate > startDate)) return toast.error('End time must be after the start.')
+    const endDate = new Date(startDate.getTime() + durationMin * 60 * 1000)
     if (startDate.getTime() < Date.now() - 60 * 1000)
       return toast.error('Start time is in the past.')
     const cap = parseInt(capacity, 10)
@@ -321,32 +320,36 @@ export function HostSlotSheet({
               )}
             </div>
 
-            {/* time */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="hs-start">Starts</Label>
-                <Input
-                  id="hs-start"
-                  type="datetime-local"
-                  value={startAt}
-                  onChange={(e) => {
-                    setStartAt(e.target.value)
-                    if (new Date(endAt) <= new Date(e.target.value)) setEndAt(addMinutes(e.target.value, 30))
-                  }}
-                  className="h-11"
-                  required
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="hs-end">Ends</Label>
-                <Input
-                  id="hs-end"
-                  type="datetime-local"
-                  value={endAt}
-                  onChange={(e) => setEndAt(e.target.value)}
-                  className="h-11"
-                  required
-                />
+            {/* start + duration */}
+            <div className="space-y-1.5">
+              <Label htmlFor="hs-start">Starts</Label>
+              <Input
+                id="hs-start"
+                type="datetime-local"
+                value={startAt}
+                onChange={(e) => setStartAt(e.target.value)}
+                className="h-11"
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Duration</Label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {DURATIONS.map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setDurationMin(d)}
+                    className={cn(
+                      'h-11 rounded-lg border text-[13px] font-semibold transition-all',
+                      durationMin === d
+                        ? 'border-foreground bg-foreground text-background'
+                        : 'border-border/70 text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {d}m
+                  </button>
+                ))}
               </div>
             </div>
 
