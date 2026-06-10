@@ -1,0 +1,1 @@
+Read docs/STATE.md and the last 5 git commits (run: git log --oneline -5), verify MCP connections with /mcp, run the test suite (npm test if it exists), then summarize where we are in 5 lines and state the exact next step. Await go-ahead before doing anything.
