@@ -5,7 +5,7 @@
 ---
 
 ## Current Phase
-**Phase 2 — Crown Jewel — IN PROGRESS. join_slot + leave_slot RPCs + slots feed UI done; cancel/edit RPCs + hosting form + /stress remaining.**
+**Phase 2 — Crown Jewel — IN PROGRESS. All seat RPCs done (join/leave/cancel/edit) + slots feed UI; hosting form + UI wiring for leave/cancel/edit + /stress remaining.**
 
 ## Status
 
@@ -37,7 +37,10 @@
 | Migration 005 | ✅ Done | host_directory view (public host info for feed) + slots in realtime publication — applied |
 | join_slot RPC | ✅ Done | Atomic SELECT…FOR UPDATE; 8/8 Vitest tests. Migration 006 added re-join-after-leave support (upsert reactivates cancelled rows) |
 | Migration 006 | ✅ Done | `leave_slot` RPC (atomic seat release + waitlist auto-promotion) + `join_slot` re-join support — applied |
-| leave_slot RPC | ✅ Done | Confirmed leaver promotes waitlist head atomically; no-waitlist frees seat (full→open); waitlist leaver closes queue; positions re-sequenced contiguous; idempotent/not_enrolled/unauthorized guards. 8/8 Vitest tests (17/17 total) |
+| leave_slot RPC | ✅ Done | Confirmed leaver promotes waitlist head atomically; no-waitlist frees seat (full→open); waitlist leaver closes queue; positions re-sequenced contiguous; idempotent/not_enrolled/unauthorized guards. 8/8 Vitest tests |
+| Migration 007 | ✅ Done | `cancel_slot` + `edit_slot` RPCs — applied |
+| cancel_slot RPC | ✅ Done | Host or `can_manage_rooms()` (SAC/CRISP) cancels whole slot; all active enrolments → cancelled; version bump; idempotent. 4/4 Vitest tests |
+| edit_slot RPC | ✅ Done | Optimistic lock on `version` (stale → version_conflict, no write); patch any subset of fields; capacity raise auto-promotes waitlist heads; capacity < enrolled rejected; host/admin only. 5/5 Vitest tests (26/26 total) |
 | Slots feed UI | ✅ Done | Home page: GD/PI cards, search, All/GD/PI filter, join + waitlist, WhatsApp deep link, realtime seat counts, skeletons, empty states. Verified at 390px with Playwright incl. live join + waitlist + realtime test |
 | Design tokens | ✅ Done | GD=indigo, PI=amber, success/warn, tinted dark palette, pulse-dot animation — in globals.css |
 | Bottom tab bar | ✅ Done | Slots/Knowledge/Doubts/Profile (+Admin for CRISP/SAC), glassy blur, safe-area aware |
@@ -65,12 +68,12 @@ Magic link works right now without any extra config.
 - **Seed counter display bug**: `seed.ts` logs "0 fake profiles seeded" due to a closure quirk in parallel batches, but all 202 rows are confirmed in the DB. Non-blocking.
 
 ## Exact Next Step for Claude — Phase 2 (remaining)
+All seat-management RPCs are done (join/leave/cancel/edit), 26/26 tests green. Remaining:
 1. Build hosting form — sheet/drawer for capable seniors; uses `room_status` view (offline/live-available/live-occupied per room); add co-judges.
-2. ~~`leave_slot`~~ ✅ done. Implement `cancel_slot` (host/admin cancels whole slot; all enrolments → cancelled) and `edit_slot` (optimistic lock on `version`) RPCs + tests.
-3. Wire a "Leave" / "Cancel my spot" action into the slots feed UI calling `leave_slot` (RPC is ready; UI not yet wired).
-4. Run `/stress` load test: 100 concurrent joins on a 6-seat slot → exactly 6 confirmed, 94 waitlisted in order, 0 oversell.
-5. Rename `middleware.ts` → `proxy.ts` (Next.js 16 convention) if it causes warnings in prod.
-6. Nice-to-have: slot detail view, "My slots" section/tab showing joined + waitlisted slots.
+2. Wire UI actions calling the ready RPCs: junior "Leave my spot" (`leave_slot`); host "Cancel slot" + "Edit slot" (`cancel_slot`/`edit_slot`, pass `version` for optimistic lock).
+3. Run `/stress` load test: 100 concurrent joins on a 6-seat slot → exactly 6 confirmed, 94 waitlisted in order, 0 oversell.
+4. Rename `middleware.ts` → `proxy.ts` (Next.js 16 convention) if it causes warnings in prod.
+5. Nice-to-have: slot detail view, "My slots" section/tab showing joined + waitlisted slots.
 
 ## Session Log
 | Date | What happened |
@@ -82,3 +85,4 @@ Magic link works right now without any extra config.
 | 2026-06-10 | Session 4: Migration 003 applied (is_sac + can_manage_rooms + rewired room RLS). room_status view deferred to 004 (needs slots). b25349 seeded with is_sac=true. RLS tests 7/7. Phase 2 slots work begins. |
 | 2026-06-10 | Session 4 (cont.): Migration 004 (slots/enrollments/join_slot) + 005 (host_directory + realtime). 15/15 tests. Playwright UI audit found Supabase Site URL bug (localhost redirect) — Janmejai fixed in dashboard. **Slots feed UI shipped**: premium dark design, GD-indigo/PI-amber tokens, search + filter, join/waitlist flows verified live in browser, realtime seat counts confirmed, bottom tab bar, profile page, stub tabs. 7 demo slots seeded. |
 | 2026-06-11 | Session 5: Migration 006 — `leave_slot` RPC (atomic seat release + waitlist auto-promotion + contiguous position re-sequencing) and `join_slot` re-join-after-leave support (upsert reactivates cancelled rows). 8 new Vitest tests; suite 17/17 green. UI "Leave" action still to wire. |
+| 2026-06-11 | Session 5 (cont.): Migration 007 — `cancel_slot` (host/admin cancels whole slot, all enrolments released, version bump) + `edit_slot` (optimistic version lock; capacity-raise auto-promotes waitlist; capacity-below-enrolled rejected). 9 new Vitest tests; suite 26/26 green. All seat RPCs complete. Next: hosting form + wiring leave/cancel/edit into the UI. |
