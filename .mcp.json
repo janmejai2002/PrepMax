@@ -1,24 +1,26 @@
 {
   "mcpServers": {
     "supabase": {
-      "transport": "http",
+      "type": "http",
       "url": "https://mcp.supabase.com/mcp"
     },
     "shadcn": {
       "command": "npx",
-      "args": ["shadcn@latest", "mcp"]
-    },
-    "context7": {
-      "transport": "http",
-      "url": "https://mcp.context7.com/mcp"
+      "args": [
+        "shadcn@latest",
+        "mcp"
+      ]
     },
     "playwright": {
       "command": "npx",
-      "args": ["-y", "@playwright/mcp@latest"]
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ]
     },
-    "github": {
-      "transport": "http",
-      "url": "https://api.githubcopilot.com/mcp/"
+"context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
     }
   }
 }

@@ -50,6 +50,26 @@
 
 ---
 
+## 2026-06-10 — Version Lock: Next.js 16 + React 19 + shadcn + @supabase/ssr
+
+**Decision:** Lock the following versions as the Phase 1 baseline.
+
+| Package | Pinned version | Notes |
+|---|---|---|
+| `next` | `16.2.9` | Latest stable as of 2026-06-10; peer dep accepts React `^18.2.0 \|\| ^19.0.0` |
+| `react` / `react-dom` | `19.2.4` | Required by Next.js 16; already installed |
+| `shadcn` (CLI) | `^4.11.0` | Already installed; when adding components, accept `--legacy-peer-deps` if prompted |
+| `@supabase/ssr` | latest at Phase 1 install | Requires `@supabase/supabase-js ^2.106.1`; install together |
+| `@supabase/supabase-js` | `^2.106.1` | Minimum required by @supabase/ssr |
+
+**Why:** Context7 confirms no blocking incompatibilities between these versions. shadcn has a known React 19 peer dep warning on some component packages — use `--legacy-peer-deps`; this does not affect runtime behaviour. `@supabase/ssr` is framework-agnostic and has no Next.js version constraint.
+
+**Alternatives rejected:**
+- Next.js 15: we're already on 16 (scaffold was created at latest stable); no reason to downgrade
+- React 18: Next.js 16 supports it but shadcn 4.x targets React 19; mixing would create more peer dep noise, not less
+
+---
+
 ## Open Decisions (to surface at the relevant phase)
 
 1. **Auth domain restriction** (Phase 1): Restrict signups to institute Google domain? → Ask Janmejai

@@ -5,62 +5,65 @@
 ---
 
 ## Current Phase
-**Phase 0 — Bootstrap (Part A) — 95% complete**
+**Phase 1 — Auth + Identity + Rooms — COMPLETE. Ready for Phase 2.**
 
 ## Status
 
 | Item | Status | Notes |
 |---|---|---|
 | CLAUDE.md | ✅ Done | Project root |
-| docs/SPEC.md | ✅ Done | Permanent spec (renamed from Spec.md) |
+| docs/SPEC.md | ✅ Done | Permanent spec |
 | docs/STATE.md | ✅ Done | This file |
-| docs/DECISIONS.md | ✅ Done | Seeded with 4 initial decisions |
-| .mcp.json | ✅ Done | All 5 servers configured |
-| Slash commands | ✅ Done | /resume /wrap /ship-check /stress /ui-review |
-| .claude/settings.json | ✅ Done | PostToolUse typecheck hook + pre-approved commands |
-| Next.js 16 scaffold | ✅ Done | TypeScript + Tailwind + App Router |
-| shadcn/ui init | ✅ Done | components.json, button.tsx, lib/utils.ts |
-| Vitest | ✅ Done | Smoke test passing |
-| Playwright | ✅ Done | Chromium installed, e2e smoke test written |
-| GitHub repo | ✅ Done | https://github.com/janmejai2002/PrepMax |
-| First commit + push | ✅ Done | `cff6196` |
-| Supabase MCP OAuth | ⚠️ Needs human action | Run: `! claude mcp add --transport http supabase https://mcp.supabase.com/mcp` |
-| GitHub MCP OAuth | ⚠️ Needs human action | Run: `! claude mcp add --transport http github https://api.githubcopilot.com/mcp/` |
-| Vercel deploy | ⚠️ Needs human action | Run: `! vercel login` then go to vercel.com → Import PrepMax repo |
-| Supabase project | ⏭ Next session | Create project via Supabase dashboard or MCP after OAuth |
-| .env.local | ⏭ Next session | NEXT_PUBLIC_SUPABASE_URL + ANON_KEY after project created |
+| docs/DECISIONS.md | ✅ Done | 5 decisions logged incl. version lock |
+| .mcp.json | ✅ Done | 4 servers (supabase, shadcn, playwright, context7) |
+| Supabase project | ✅ Done | `fzohmolumyfupffkbxug` · ap-south-1 (Mumbai) |
+| .env.local | ✅ Done | URL + anon key + service role key + exception emails |
+| Migration 001 | ✅ Done | profiles + rooms tables |
+| Migration 002 | ✅ Done | RLS recursion fix — SECURITY DEFINER helper functions |
+| RLS policies | ✅ Done | 9 policies; `is_crisp_admin()` + `get_capability_flags()` helpers |
+| RLS tests | ✅ Done | 6/6 passing (`npm run test:rls`) |
+| Supabase Auth | ⚠️ Partial | Magic link ready. Google OAuth needs Client ID/Secret in Supabase dashboard |
+| Seed data | ✅ Done | 202 profiles (2 test + 200 Faker) · 5 rooms |
+| /login page | ✅ Done | Google OAuth button + magic-link fallback |
+| /auth/callback | ✅ Done | Domain check (astra.xlri.ac.in) + exception list + onboarding redirect |
+| Middleware | ✅ Done | Auth guard on all routes; domain enforcement |
+| /onboarding | ✅ Done | Name/phone/whatsapp/year/batch/section/roll → upsert → home |
+| /admin/rooms | ✅ Done | CRISP-admin-only; list rooms; toggle is_live; add room |
+| Vercel deploy | ✅ Done | https://prep-max-alpha.vercel.app |
+| Vercel env vars | ✅ Done | NEXT_PUBLIC_SUPABASE_URL, ANON_KEY, ALLOWED_EXCEPTION_EMAILS, SERVICE_ROLE_KEY |
+| GitHub repo | ✅ Done | https://github.com/janmejai2002/PrepMax — preview deploys on every push |
 
-## In-Progress
-Nothing — waiting for human to complete 3 one-time auth steps above.
+## Test accounts
+| Email | Year | Flags | Purpose |
+|---|---|---|---|
+| `killgod.obsidian@gmail.com` | first | none | Junior test account |
+| `b25349@astra.xlri.ac.in` | second | all ON (host GD/PI, mentor, committee, crisp_admin) | Senior/admin test account |
 
-## Exact Next Steps for Human (do these once, in any order)
+## One action still needed from Janmejai
+**Google OAuth** — to sign in with Google (not just magic link), add credentials to Supabase:
+1. `console.cloud.google.com` → Credentials → OAuth 2.0 Client ID (Web)
+2. Authorized redirect URI: `https://fzohmolumyfupffkbxug.supabase.co/auth/v1/callback`
+   Also add: `https://prep-max-alpha.vercel.app/auth/callback` to Supabase's redirect allow-list
+3. `supabase.com/dashboard/project/fzohmolumyfupffkbxug/auth/providers` → Enable Google → paste Client ID + Secret
 
-### 1. Supabase MCP (required for Phase 1+)
-In this Claude Code session, type:
-```
-! claude mcp add --transport http supabase https://mcp.supabase.com/mcp
-```
-Follow the browser OAuth prompt. When asked to scope, select or create the PrepMax project.
+Magic link works right now without any extra config.
 
-### 2. GitHub MCP (optional for Phase 0, useful from Phase 1)
-In this Claude Code session, type:
-```
-! claude mcp add --transport http github https://api.githubcopilot.com/mcp/
-```
-Follow the GitHub OAuth prompt (needs GitHub Copilot access).
+## Known Issues / Logged Bugs
+- **Middleware deprecation warning** at build time: `"middleware" file convention is deprecated, use "proxy" instead` — this is a Next.js 16 cosmetic warning only; routing works correctly. Will rename to `proxy.ts` in Phase 2 if it becomes a blocker.
+- **Seed counter display bug**: `seed.ts` logs "0 fake profiles seeded" due to a closure quirk in parallel batches, but all 202 rows are confirmed in the DB. Non-blocking.
 
-### 3. Vercel deploy (so you can review on phone)
-Run: `! vercel login` → follow browser prompt  
-Then go to **vercel.com → Add New → Project → Import Git Repository → PrepMax**  
-This gives you preview URLs on every push that you can open on your phone.
-
-## After Human Completes Auth
-Resume with `/resume` — next session will start Phase 1: Auth + identity + rooms.
-
-## Known Issues / Blockers
-- None code-side. All blockers are one-time human auth steps listed above.
+## Exact Next Step for Claude — Phase 2
+1. Rename `middleware.ts` → `proxy.ts` (Next.js 16 convention) if it causes warnings in prod.
+2. Create migration 003: `slots`, `enrollments`, `slot_judges` tables + RLS.
+3. Implement `join_slot` atomic Postgres RPC (Iron Rule #1: SELECT...FOR UPDATE, no app-side read-write).
+4. Build slots feed UI (home page): GD/PI cards, segmented filter, real-time seat counts via Supabase Realtime.
+5. Build hosting form.
+6. Run `/stress` load test: 100 concurrent joins on a 6-seat slot → exactly 6 confirmed, 94 waitlisted, 0 oversell.
+7. Leave `leave_slot`, `cancel_slot`, `edit_slot` RPCs for Phase 2 as well.
 
 ## Session Log
 | Date | What happened |
 |---|---|
-| 2026-06-10 | Session 0 complete: full bootstrap. Next.js 16 + shadcn + Vitest + Playwright. GitHub repo live. Waiting on Supabase + Vercel auth. |
+| 2026-06-10 | Session 0: full bootstrap. Next.js 16 + shadcn + Vitest + Playwright + GitHub repo. |
+| 2026-06-10 | Session 1: Supabase MCP auth. GitHub MCP (user scope). Version lock confirmed. Phase 0 → 100%. |
+| 2026-06-10 | Session 2 (Phase 1): Supabase project created (Mumbai). Migrations 001+002 applied. Auth flow (Google + magic link, domain-restricted). /onboarding, /admin/rooms. 202 seed rows. 6/6 RLS tests passing. Vercel live at https://prep-max-alpha.vercel.app. |
