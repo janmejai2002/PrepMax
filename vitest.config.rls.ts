@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    include: ['tests/rls.test.ts'],
+    include: ['tests/*.test.ts'],
     testTimeout: 90_000,
     hookTimeout: 90_000,
   },
