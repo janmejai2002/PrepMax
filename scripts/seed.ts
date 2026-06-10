@@ -49,6 +49,7 @@ const TEST_ACCOUNTS = [
     is_mentor: true,
     is_committee: true,
     is_crisp_admin: true,
+    is_sac: true,
   },
 ]
 

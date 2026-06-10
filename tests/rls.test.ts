@@ -17,13 +17,16 @@ const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 const JUNIOR_EMAIL = 'rls-test-junior@prepmax-test.local'
 const ADMIN_EMAIL = 'rls-test-admin@prepmax-test.local'
+const SAC_EMAIL = 'rls-test-sac@prepmax-test.local'
 const PASSWORD = 'rls-test-pass-2026!'
 
 let adminSb: SupabaseClient
 let juniorClient: SupabaseClient
 let crisprClient: SupabaseClient
+let sacClient: SupabaseClient
 let juniorId: string
 let adminUserId: string
+let sacUserId: string
 let testRoomId: string
 
 beforeAll(async () => {
@@ -36,6 +39,7 @@ beforeAll(async () => {
   // Create or reuse junior test user
   juniorId = await upsertUser(JUNIOR_EMAIL, PASSWORD)
   adminUserId = await upsertUser(ADMIN_EMAIL, PASSWORD)
+  sacUserId = await upsertUser(SAC_EMAIL, PASSWORD)
 
   // Seed their profiles via service role (bypasses RLS)
   await adminSb.from('profiles').upsert([
@@ -52,6 +56,7 @@ beforeAll(async () => {
       is_mentor: false,
       is_committee: false,
       is_crisp_admin: false,
+      is_sac: false,
     },
     {
       id: adminUserId,
@@ -66,6 +71,22 @@ beforeAll(async () => {
       is_mentor: true,
       is_committee: true,
       is_crisp_admin: true,
+      is_sac: false,
+    },
+    {
+      id: sacUserId,
+      email: SAC_EMAIL,
+      name: 'RLS SAC',
+      year: 'second',
+      batch: 'PGP 2024-26',
+      section: 'C',
+      roll: 'RLSS001',
+      can_host_gd: false,
+      can_host_pi: false,
+      is_mentor: false,
+      is_committee: false,
+      is_crisp_admin: false,
+      is_sac: true,
     },
   ])
 
@@ -80,12 +101,13 @@ beforeAll(async () => {
   // Build authenticated clients
   juniorClient = await buildUserClient(JUNIOR_EMAIL, PASSWORD)
   crisprClient = await buildUserClient(ADMIN_EMAIL, PASSWORD)
+  sacClient = await buildUserClient(SAC_EMAIL, PASSWORD)
 }, 60_000)
 
 afterAll(async () => {
   if (!adminSb) return
   // Clean up test users and their profiles (cascade deletes profile)
-  for (const id of [juniorId, adminUserId]) {
+  for (const id of [juniorId, adminUserId, sacUserId]) {
     if (id) await adminSb.auth.admin.deleteUser(id)
   }
   await adminSb.from('rooms').delete().eq('name', '__rls-test-room__')
@@ -209,5 +231,28 @@ describe('rooms — non-CRISP user', () => {
       .single()
 
     expect(data?.capacity).toBe(5)
+  })
+})
+
+// ── Test 4: SAC user (is_sac=true, is_crisp_admin=false) can manage rooms ─────
+describe('rooms — SAC user', () => {
+  it('can toggle is_live (via can_manage_rooms)', async () => {
+    const { error } = await sacClient
+      .from('rooms')
+      .update({ is_live: true })
+      .eq('id', testRoomId)
+
+    expect(error).toBeNull()
+
+    const { data } = await adminSb
+      .from('rooms')
+      .select('is_live')
+      .eq('id', testRoomId)
+      .single()
+
+    expect(data?.is_live).toBe(true)
+
+    // Reset
+    await adminSb.from('rooms').update({ is_live: false }).eq('id', testRoomId)
   })
 })
