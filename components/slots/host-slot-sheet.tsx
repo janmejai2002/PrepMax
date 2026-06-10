@@ -1,0 +1,441 @@
+'use client'
+
+import { useMemo, useState } from 'react'
+import { Loader2, Check, X, Plus } from 'lucide-react'
+import { toast } from 'sonner'
+import { createClient } from '@/lib/supabase/client'
+import { cn } from '@/lib/utils'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import type {
+  FeedSlot,
+  HostCapabilities,
+  JudgeOption,
+  Me,
+  RoomOption,
+  SlotType,
+} from '@/lib/types'
+
+interface HostSlotSheetProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  me: Me
+  myWhatsapp: string | null
+  capabilities: HostCapabilities
+  rooms: RoomOption[]
+  judges: JudgeOption[]
+  onCreated: (slot: FeedSlot) => void
+}
+
+// A datetime-local default ~1 hour from now, rounded to the next half hour,
+// formatted for the native input (local time, no timezone suffix).
+function defaultStart(): string {
+  const d = new Date(Date.now() + 60 * 60 * 1000)
+  d.setMinutes(d.getMinutes() > 30 ? 60 : 30, 0, 0)
+  return toLocalInput(d)
+}
+function toLocalInput(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+function addMinutes(localInput: string, mins: number): string {
+  return toLocalInput(new Date(new Date(localInput).getTime() + mins * 60 * 1000))
+}
+
+export function HostSlotSheet({
+  open,
+  onOpenChange,
+  me,
+  myWhatsapp,
+  capabilities,
+  rooms,
+  judges,
+  onCreated,
+}: HostSlotSheetProps) {
+  const allowedTypes = useMemo<SlotType[]>(() => {
+    const t: SlotType[] = []
+    if (capabilities.canHostGd || capabilities.canManageRooms) t.push('GD')
+    if (capabilities.canHostPi || capabilities.canManageRooms) t.push('PI')
+    return t
+  }, [capabilities])
+
+  const start0 = defaultStart()
+  const [type, setType] = useState<SlotType>(allowedTypes[0] ?? 'GD')
+  const [topic, setTopic] = useState('')
+  const [internship, setInternship] = useState('')
+  const [areaInput, setAreaInput] = useState('')
+  const [areas, setAreas] = useState<string[]>([])
+  const [roomId, setRoomId] = useState('')
+  const [startAt, setStartAt] = useState(start0)
+  const [endAt, setEndAt] = useState(addMinutes(start0, 30))
+  const [capacity, setCapacity] = useState('8')
+  const [description, setDescription] = useState('')
+  const [gdTypeDesc, setGdTypeDesc] = useState('')
+  const [coJudges, setCoJudges] = useState<Set<string>>(new Set())
+  const [judgeFilter, setJudgeFilter] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  const liveRooms = useMemo(() => rooms.filter((r) => r.status !== 'offline'), [rooms])
+  const filteredJudges = useMemo(() => {
+    const q = judgeFilter.trim().toLowerCase()
+    return q ? judges.filter((j) => j.name.toLowerCase().includes(q)) : judges
+  }, [judges, judgeFilter])
+
+  function addArea() {
+    const v = areaInput.trim()
+    if (!v) return
+    if (!areas.includes(v)) setAreas((p) => [...p, v])
+    setAreaInput('')
+  }
+  function toggleJudge(id: string) {
+    setCoJudges((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function reset() {
+    const s = defaultStart()
+    setType(allowedTypes[0] ?? 'GD')
+    setTopic('')
+    setInternship('')
+    setAreaInput('')
+    setAreas([])
+    setRoomId('')
+    setStartAt(s)
+    setEndAt(addMinutes(s, 30))
+    setCapacity('8')
+    setDescription('')
+    setGdTypeDesc('')
+    setCoJudges(new Set())
+    setJudgeFilter('')
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+
+    // Validation
+    if (topic.trim().length < 3) return toast.error('Give the topic a clearer title.')
+    if (!roomId) return toast.error('Pick a room.')
+    const startDate = new Date(startAt)
+    const endDate = new Date(endAt)
+    if (!(endDate > startDate)) return toast.error('End time must be after the start.')
+    if (startDate.getTime() < Date.now() - 60 * 1000)
+      return toast.error('Start time is in the past.')
+    const cap = parseInt(capacity, 10)
+    if (!cap || cap < 1) return toast.error('Capacity must be at least 1.')
+
+    const room = rooms.find((r) => r.id === roomId)!
+    setSubmitting(true)
+    const supabase = createClient()
+
+    const { data: created, error } = await supabase
+      .from('slots')
+      .insert({
+        type,
+        host_id: me.id,
+        topic: topic.trim(),
+        internship: internship.trim() || null,
+        expert_areas: areas,
+        room_id: roomId,
+        start_at: startDate.toISOString(),
+        end_at: endDate.toISOString(),
+        capacity: cap,
+        description: description.trim() || null,
+        gd_type_desc: type === 'GD' ? gdTypeDesc.trim() || null : null,
+      })
+      .select('*')
+      .single()
+
+    if (error || !created) {
+      setSubmitting(false)
+      toast.error(
+        error?.message.includes('row-level security')
+          ? `You're not set up to host ${type} slots yet.`
+          : 'Could not post the slot. Please try again.'
+      )
+      return
+    }
+
+    // Co-judges fire after the slot exists (RLS lets the host attach judges).
+    if (coJudges.size > 0) {
+      const { error: jErr } = await supabase
+        .from('slot_judges')
+        .insert([...coJudges].map((judge_id) => ({ slot_id: created.id, judge_id })))
+      if (jErr) toast.warning('Slot posted, but co-judges could not be added.')
+    }
+
+    setSubmitting(false)
+
+    const feedSlot: FeedSlot = {
+      ...(created as Omit<FeedSlot, 'room' | 'host' | 'my_enrollment'>),
+      room: { name: room.name, location: room.location ?? '' },
+      host: { id: me.id, name: me.name, whatsapp: myWhatsapp },
+      my_enrollment: null,
+    }
+    onCreated(feedSlot)
+    toast.success('Slot posted — juniors can join now 🎉')
+    reset()
+    onOpenChange(false)
+  }
+
+  const isGD = type === 'GD'
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        showCloseButton
+        className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-md"
+      >
+        <DialogHeader className="border-b border-border/60 px-4 py-3.5">
+          <DialogTitle>Host a slot</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
+            {/* type */}
+            {allowedTypes.length > 1 && (
+              <div className="space-y-1.5">
+                <Label>Type</Label>
+                <div className="flex h-11 items-center gap-1 rounded-full border border-border/70 bg-card p-1">
+                  {allowedTypes.map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setType(t)}
+                      className={cn(
+                        'h-full flex-1 rounded-full text-[13px] font-semibold transition-all',
+                        type === t
+                          ? t === 'GD'
+                            ? 'bg-gd-soft text-gd'
+                            : 'bg-pi-soft text-pi'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      {t === 'GD' ? 'Group Discussion' : 'Personal Interview'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* topic */}
+            <div className="space-y-1.5">
+              <Label htmlFor="hs-topic">Topic</Label>
+              <Input
+                id="hs-topic"
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                placeholder={isGD ? 'Is remote work here to stay?' : 'Finance — summers prep'}
+                className="h-11"
+                required
+              />
+            </div>
+
+            {/* internship */}
+            <div className="space-y-1.5">
+              <Label htmlFor="hs-intern">Company / domain <span className="text-muted-foreground">(optional)</span></Label>
+              <Input
+                id="hs-intern"
+                value={internship}
+                onChange={(e) => setInternship(e.target.value)}
+                placeholder="e.g. McKinsey, Consulting"
+                className="h-11"
+              />
+            </div>
+
+            {/* expert areas */}
+            <div className="space-y-1.5">
+              <Label htmlFor="hs-area">Focus areas <span className="text-muted-foreground">(optional)</span></Label>
+              <div className="flex gap-2">
+                <Input
+                  id="hs-area"
+                  value={areaInput}
+                  onChange={(e) => setAreaInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); addArea() }
+                  }}
+                  placeholder="Add a tag, press Enter"
+                  className="h-11"
+                />
+                <Button type="button" variant="outline" size="icon" className="h-11 w-11 shrink-0" onClick={addArea} aria-label="Add focus area">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {areas.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {areas.map((a) => (
+                    <button
+                      key={a}
+                      type="button"
+                      onClick={() => setAreas((p) => p.filter((x) => x !== a))}
+                      className="flex items-center gap-1 rounded-full border border-border/70 px-2.5 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+                    >
+                      {a}
+                      <X className="h-3 w-3" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* room */}
+            <div className="space-y-1.5">
+              <Label htmlFor="hs-room">Room</Label>
+              {liveRooms.length === 0 ? (
+                <p className="rounded-lg bg-muted/60 px-3 py-2.5 text-xs text-muted-foreground">
+                  No live rooms right now. Ask CRISP/SAC to bring a room online.
+                </p>
+              ) : (
+                <select
+                  id="hs-room"
+                  value={roomId}
+                  onChange={(e) => setRoomId(e.target.value)}
+                  required
+                  className="h-11 w-full rounded-md border border-border/70 bg-card px-3 text-sm outline-none focus:border-ring"
+                >
+                  <option value="" disabled>Select a room</option>
+                  {liveRooms.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                      {r.location ? ` · ${r.location}` : ''}
+                      {r.status === 'live_occupied' ? ' (in use now)' : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* time */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="hs-start">Starts</Label>
+                <Input
+                  id="hs-start"
+                  type="datetime-local"
+                  value={startAt}
+                  onChange={(e) => {
+                    setStartAt(e.target.value)
+                    if (new Date(endAt) <= new Date(e.target.value)) setEndAt(addMinutes(e.target.value, 30))
+                  }}
+                  className="h-11"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="hs-end">Ends</Label>
+                <Input
+                  id="hs-end"
+                  type="datetime-local"
+                  value={endAt}
+                  onChange={(e) => setEndAt(e.target.value)}
+                  className="h-11"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* capacity */}
+            <div className="space-y-1.5">
+              <Label htmlFor="hs-cap">Seats</Label>
+              <Input
+                id="hs-cap"
+                type="number"
+                min="1"
+                value={capacity}
+                onChange={(e) => setCapacity(e.target.value)}
+                className="h-11"
+                required
+              />
+            </div>
+
+            {/* GD format note */}
+            {isGD && (
+              <div className="space-y-1.5">
+                <Label htmlFor="hs-gd">Format note <span className="text-muted-foreground">(optional)</span></Label>
+                <Input
+                  id="hs-gd"
+                  value={gdTypeDesc}
+                  onChange={(e) => setGdTypeDesc(e.target.value)}
+                  placeholder="e.g. Case-based, 15 min + feedback"
+                  className="h-11"
+                />
+              </div>
+            )}
+
+            {/* description */}
+            <div className="space-y-1.5">
+              <Label htmlFor="hs-desc">Description <span className="text-muted-foreground">(optional)</span></Label>
+              <Textarea
+                id="hs-desc"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Anything juniors should know or prepare."
+                rows={3}
+              />
+            </div>
+
+            {/* co-judges */}
+            {judges.length > 0 && (
+              <div className="space-y-1.5">
+                <Label>Co-judges <span className="text-muted-foreground">(optional)</span></Label>
+                {judges.length > 8 && (
+                  <Input
+                    value={judgeFilter}
+                    onChange={(e) => setJudgeFilter(e.target.value)}
+                    placeholder="Search seniors…"
+                    className="h-10"
+                  />
+                )}
+                <div className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto rounded-lg border border-border/60 p-2">
+                  {filteredJudges.length === 0 ? (
+                    <span className="px-1 py-1 text-xs text-muted-foreground">No match.</span>
+                  ) : (
+                    filteredJudges.map((j) => {
+                      const picked = coJudges.has(j.id)
+                      return (
+                        <button
+                          key={j.id}
+                          type="button"
+                          onClick={() => toggleJudge(j.id)}
+                          className={cn(
+                            'flex items-center gap-1 rounded-full border px-2.5 py-1 text-[12px] transition-colors',
+                            picked
+                              ? 'border-success/40 bg-success/15 text-success'
+                              : 'border-border/70 text-muted-foreground hover:text-foreground'
+                          )}
+                        >
+                          {picked && <Check className="h-3 w-3" />}
+                          {j.name}
+                        </button>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* footer action */}
+          <div className="border-t border-border/60 px-4 py-3">
+            <Button type="submit" className="h-11 w-full" disabled={submitting || liveRooms.length === 0}>
+              {submitting ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Posting…
+                </span>
+              ) : (
+                'Post slot'
+              )}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}

@@ -1,17 +1,29 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Search, Sparkles } from 'lucide-react'
+import { Search, Sparkles, Plus } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { SlotCard } from './slot-card'
-import type { FeedSlot, Me, SlotType } from '@/lib/types'
+import { HostSlotSheet } from './host-slot-sheet'
+import type {
+  FeedSlot,
+  HostCapabilities,
+  JudgeOption,
+  Me,
+  RoomOption,
+  SlotType,
+} from '@/lib/types'
 
 type Filter = 'all' | SlotType
 
 interface SlotsFeedProps {
   initialSlots: FeedSlot[]
   me: Me
+  myWhatsapp: string | null
+  capabilities: HostCapabilities
+  rooms: RoomOption[]
+  judges: JudgeOption[]
 }
 
 const FILTERS: { value: Filter; label: string }[] = [
@@ -28,10 +40,21 @@ function greeting(): string {
   return 'Good evening'
 }
 
-export function SlotsFeed({ initialSlots, me }: SlotsFeedProps) {
+export function SlotsFeed({
+  initialSlots,
+  me,
+  myWhatsapp,
+  capabilities,
+  rooms,
+  judges,
+}: SlotsFeedProps) {
   const [slots, setSlots] = useState<FeedSlot[]>(initialSlots)
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
+  const [hostOpen, setHostOpen] = useState(false)
+
+  const canHost =
+    capabilities.canHostGd || capabilities.canHostPi || capabilities.canManageRooms
 
   // Realtime: seat counts + status changes broadcast to every browsing phone
   useEffect(() => {
@@ -81,6 +104,15 @@ export function SlotsFeed({ initialSlots, me }: SlotsFeedProps) {
 
   function handleSlotChange(updated: FeedSlot) {
     setSlots((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))
+  }
+
+  function handleSlotCreated(created: FeedSlot) {
+    // Keep the feed ordered by start time, newest-relevant first.
+    setSlots((prev) =>
+      [created, ...prev].sort(
+        (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
+      )
+    )
   }
 
   const firstName = me.name.split(' ')[0]
@@ -158,6 +190,30 @@ export function SlotsFeed({ initialSlots, me }: SlotsFeedProps) {
           ))
         )}
       </main>
+
+      {/* Host a slot — capable seniors only */}
+      {canHost && (
+        <>
+          <button
+            onClick={() => setHostOpen(true)}
+            className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-1/2 z-40 flex h-12 -translate-x-1/2 items-center gap-2 rounded-full bg-foreground px-5 text-sm font-semibold text-background shadow-lg shadow-black/25 transition-transform active:scale-95"
+            aria-label="Host a slot"
+          >
+            <Plus className="h-4.5 w-4.5" />
+            Host a slot
+          </button>
+          <HostSlotSheet
+            open={hostOpen}
+            onOpenChange={setHostOpen}
+            me={me}
+            myWhatsapp={myWhatsapp}
+            capabilities={capabilities}
+            rooms={rooms}
+            judges={judges}
+            onCreated={handleSlotCreated}
+          />
+        </>
+      )}
     </div>
   )
 }

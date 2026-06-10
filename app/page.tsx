@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { SlotsFeed } from '@/components/slots/slots-feed'
 import { BottomNav } from '@/components/nav/bottom-nav'
-import type { FeedSlot } from '@/lib/types'
+import type { FeedSlot, HostCapabilities, RoomOption, JudgeOption } from '@/lib/types'
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -14,11 +14,32 @@ export default async function HomePage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('name, year, is_crisp_admin, is_sac')
+    .select('name, whatsapp, year, can_host_gd, can_host_pi, is_crisp_admin, is_sac')
     .eq('id', user.id)
     .single()
 
   if (!profile) redirect('/onboarding')
+
+  const capabilities: HostCapabilities = {
+    canHostGd: !!profile.can_host_gd,
+    canHostPi: !!profile.can_host_pi,
+    canManageRooms: !!profile.is_crisp_admin || !!profile.is_sac,
+  }
+  const canHost =
+    capabilities.canHostGd || capabilities.canHostPi || capabilities.canManageRooms
+
+  // Hosting-only data: rooms to pick from + eligible co-judges. Loaded only when
+  // the user can actually post a slot, so juniors pay no extra query cost.
+  let rooms: RoomOption[] = []
+  let judges: JudgeOption[] = []
+  if (canHost) {
+    const [roomsRes, judgesRes] = await Promise.all([
+      supabase.from('room_status').select('id, name, location, status').order('name'),
+      supabase.from('host_directory').select('id, name').order('name'),
+    ])
+    rooms = (roomsRes.data ?? []) as RoomOption[]
+    judges = (judgesRes.data ?? []).filter((j) => j.id !== user.id)
+  }
 
   const nowIso = new Date().toISOString()
   const [slotsRes, hostsRes, enrollRes] = await Promise.all([
@@ -54,7 +75,14 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen bg-background pb-nav">
-      <SlotsFeed initialSlots={slots} me={{ id: user.id, name: profile.name }} />
+      <SlotsFeed
+        initialSlots={slots}
+        me={{ id: user.id, name: profile.name }}
+        myWhatsapp={profile.whatsapp ?? null}
+        capabilities={capabilities}
+        rooms={rooms}
+        judges={judges}
+      />
       <BottomNav isAdmin={profile.is_crisp_admin || profile.is_sac} />
     </div>
   )

@@ -27,3 +27,25 @@ export interface Me {
   id: string
   name: string
 }
+
+/** What a senior is allowed to host. Room-managers (SAC/CRISP) may host either type. */
+export interface HostCapabilities {
+  canHostGd: boolean
+  canHostPi: boolean
+  canManageRooms: boolean
+}
+
+export type RoomAvailability = 'offline' | 'live_available' | 'live_occupied'
+
+export interface RoomOption {
+  id: string
+  name: string
+  location: string | null
+  status: RoomAvailability
+}
+
+/** A senior eligible to be added as a co-judge on a slot. */
+export interface JudgeOption {
+  id: string
+  name: string
+}
