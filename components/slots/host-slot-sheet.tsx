@@ -10,6 +10,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import type {
   FeedSlot,
   HostCapabilities,
@@ -79,6 +86,13 @@ export function HostSlotSheet({
   const [submitting, setSubmitting] = useState(false)
 
   const liveRooms = useMemo(() => rooms.filter((r) => r.status !== 'offline'), [rooms])
+  const roomLabel = (r: RoomOption) =>
+    `${r.name}${r.location ? ` · ${r.location}` : ''}${r.status === 'live_occupied' ? ' (in use now)' : ''}`
+  // value→label map so the Select trigger shows the room name, not its id
+  const roomItems = useMemo(
+    () => Object.fromEntries(liveRooms.map((r) => [r.id, roomLabel(r)])),
+    [liveRooms]
+  )
   const filteredJudges = useMemo(() => {
     const q = judgeFilter.trim().toLowerCase()
     return q ? judges.filter((j) => j.name.toLowerCase().includes(q)) : judges
@@ -292,22 +306,18 @@ export function HostSlotSheet({
                   No live rooms right now. Ask CRISP/SAC to bring a room online.
                 </p>
               ) : (
-                <select
-                  id="hs-room"
-                  value={roomId}
-                  onChange={(e) => setRoomId(e.target.value)}
-                  required
-                  className="h-11 w-full rounded-md border border-border/70 bg-card px-3 text-sm outline-none focus:border-ring"
-                >
-                  <option value="" disabled>Select a room</option>
-                  {liveRooms.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name}
-                      {r.location ? ` · ${r.location}` : ''}
-                      {r.status === 'live_occupied' ? ' (in use now)' : ''}
-                    </option>
-                  ))}
-                </select>
+                <Select value={roomId} onValueChange={(v) => setRoomId(v ?? '')} items={roomItems}>
+                  <SelectTrigger id="hs-room" className="h-11 w-full">
+                    <SelectValue placeholder="Select a room" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {liveRooms.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        {roomLabel(r)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
             </div>
 

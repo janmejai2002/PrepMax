@@ -41,8 +41,7 @@
 | Migration 007 | ✅ Done | `cancel_slot` + `edit_slot` RPCs — applied |
 | cancel_slot RPC | ✅ Done | Host or `can_manage_rooms()` (SAC/CRISP) cancels whole slot; all active enrolments → cancelled; version bump; idempotent. 4/4 Vitest tests |
 | edit_slot RPC | ✅ Done | Optimistic lock on `version` (stale → version_conflict, no write); patch any subset of fields; capacity raise auto-promotes waitlist heads; capacity < enrolled rejected; host/admin only. 5/5 Vitest tests (26/26 total) |
-| Hosting form | ✅ Done | "Host a slot" FAB (capable seniors only) → mobile sheet: type GD/PI (capability-gated), topic, company, focus-area tags, room picker (from `room_status`, offline rooms hidden), datetime, seats, GD format note, description, **co-judges multi-select** (from `host_directory`, self excluded). Inserts slot (RLS-guarded) + slot_judges, prepends to feed. Verified end-to-end at 390px with Playwright (slot + co-judge persisted in DB). `scripts/dev-session.ts` added to mint an authed session for headless Playwright runs. |
-| Room picker note | ⚠️ Minor | Uses a native `<select>` (great mobile UX) rather than the installed shadcn Select — flagged for the new UI-registry preference; easy swap if desired. |
+| Hosting form | ✅ Done | "Host a slot" FAB (capable seniors only) → mobile sheet: type GD/PI (capability-gated), topic, company, focus-area tags, room picker (shadcn Select, from `room_status`, offline rooms hidden), datetime, seats, GD format note, description, **co-judges multi-select** (from `host_directory`, self excluded). Inserts slot (RLS-guarded) + slot_judges, prepends to feed. Verified end-to-end at 390px with Playwright (slot + co-judge persisted in DB). `scripts/dev-session.ts` added to mint an authed session for headless Playwright runs. Room Select needs `items` value→label map on the root or the trigger shows the id. |
 | Slots feed UI | ✅ Done | Home page: GD/PI cards, search, All/GD/PI filter, join + waitlist, WhatsApp deep link, realtime seat counts, skeletons, empty states. Verified at 390px with Playwright incl. live join + waitlist + realtime test |
 | Design tokens | ✅ Done | GD=indigo, PI=amber, success/warn, tinted dark palette, pulse-dot animation — in globals.css |
 | Bottom tab bar | ✅ Done | Slots/Knowledge/Doubts/Profile (+Admin for CRISP/SAC), glassy blur, safe-area aware |
@@ -73,9 +72,8 @@ Magic link works right now without any extra config.
 All seat-management RPCs done (join/leave/cancel/edit, 26/26 tests) + hosting form shipped & verified. Remaining:
 1. Wire UI actions calling the ready RPCs: junior "Leave my spot" (`leave_slot`); host "Cancel slot" + "Edit slot" (`cancel_slot`/`edit_slot`, pass `version` for optimistic lock). Host-only controls show when `slot.host_id === me.id` or admin.
 2. Run `/stress` load test: 100 concurrent joins on a 6-seat slot → exactly 6 confirmed, 94 waitlisted in order, 0 oversell.
-3. (Optional) Swap the hosting-form room picker from native `<select>` to the installed shadcn Select per the UI-registry preference.
-4. Rename `middleware.ts` → `proxy.ts` (Next.js 16 convention) if it causes warnings in prod.
-5. Nice-to-have: slot detail view, "My slots" section/tab showing joined + waitlisted slots.
+3. Rename `middleware.ts` → `proxy.ts` (Next.js 16 convention) if it causes warnings in prod.
+4. Nice-to-have: slot detail view, "My slots" section/tab showing joined + waitlisted slots.
 
 ## Session Log
 | Date | What happened |
