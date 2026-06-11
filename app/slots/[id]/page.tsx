@@ -18,20 +18,21 @@ export default async function SlotDetailPage({ params }: Props) {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('name, is_crisp_admin, is_sac')
-    .eq('id', user.id)
-    .single()
+  const [{ data: profile }, { data: detail, error }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('name, can_host_gd, can_host_pi, is_crisp_admin, is_sac, is_mentor, is_crisp_member')
+      .eq('id', user.id)
+      .single(),
+    supabase.rpc('get_slot_detail', { p_slot_id: id }),
+  ])
+
   if (!profile) redirect('/onboarding')
-
-  const { data: detail, error } = await supabase.rpc('get_slot_detail', {
-    p_slot_id: id,
-  })
-
   if (error || !detail || detail.error) notFound()
 
   const slot = detail as SlotDetail
+  const isSenior = !!(profile.can_host_gd || profile.can_host_pi)
+  const isCrispMember = !!profile.is_crisp_member
 
   return (
     <div className="min-h-screen bg-background pb-nav">
@@ -51,10 +52,16 @@ export default async function SlotDetailPage({ params }: Props) {
 
         <SlotDetailClient
           slot={slot}
-          me={{ id: user.id, name: profile.name }}
+          me={{ id: user.id, name: profile.name, isSenior }}
         />
       </div>
-      <BottomNav isAdmin={!!(profile.is_crisp_admin || profile.is_sac)} isSenior={!!(profile.is_crisp_admin || profile.is_sac)} />
+      <BottomNav
+        isAdmin={!!(profile.is_crisp_admin || profile.is_sac)}
+        isMentor={!!profile.is_mentor}
+        isSenior={isSenior}
+        isSac={!!profile.is_sac}
+        isCrispMember={isCrispMember}
+      />
     </div>
   )
 }

@@ -10,6 +10,8 @@ import {
   ShieldCheck,
   UserCheck,
   ClipboardList,
+  Building2,
+  Eye,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -20,18 +22,38 @@ export function BottomNav({
   isMentor = false,
   isSenior = false,
   isCommittee = false,
+  isSac = false,
+  isCrispMember = false,
 }: {
   isAdmin?: boolean
   isMentor?: boolean
   isSenior?: boolean
   isCommittee?: boolean
+  isSac?: boolean
+  isCrispMember?: boolean
 }) {
   const pathname = usePathname()
   const requestsHref = isSenior ? '/requests' : '/my-requests'
 
   let tabs: Tab[]
 
-  if (isCommittee) {
+  if (isSac) {
+    // SAC shared account: Rooms only — no feed, no knowledge, no doubts
+    tabs = [
+      { href: '/admin/rooms', label: 'Rooms', icon: Building2 },
+    ]
+  } else if (isCrispMember) {
+    // CRISP member: full senior nav + Rooms tab + Mentee Monitor
+    tabs = [
+      { href: '/', label: 'Slots', icon: CalendarRange },
+      { href: '/requests', label: 'Requests', icon: ClipboardList },
+      { href: '/knowledge', label: 'Knowledge', icon: BookOpen },
+      { href: '/doubts', label: 'Doubts', icon: MessageCircleQuestion },
+      { href: '/admin/rooms', label: 'Rooms', icon: Building2 },
+      { href: '/crisp-monitor', label: 'Monitor', icon: Eye },
+      { href: '/profile', label: 'Profile', icon: CircleUser },
+    ]
+  } else if (isCommittee) {
     // @xlri.ac.in shared accounts: Feed (read-only) + Knowledge + Doubts + optional Admin + Profile.
     tabs = [
       { href: '/', label: 'Feed', icon: CalendarRange },
@@ -42,7 +64,6 @@ export function BottomNav({
     ]
   } else {
     // 5-tab base: Slots · Requests · Knowledge · Doubts · Profile
-    // Role extras (Admin/Mentor) insert before Profile, keeping Profile always visible.
     const coreTabs: Tab[] = [
       { href: '/', label: 'Slots', icon: CalendarRange },
       { href: requestsHref, label: 'Requests', icon: ClipboardList },
@@ -51,10 +72,8 @@ export function BottomNav({
     ]
     const profileTab: Tab = { href: '/profile', label: 'Profile', icon: CircleUser }
     if (isAdmin) {
-      // Admin supersedes Mentor — Admin tab + Profile = 6 tabs
       tabs = [...coreTabs, { href: '/admin/stats', label: 'Admin', icon: ShieldCheck }, profileTab]
     } else if (isMentor) {
-      // Mentor: Mentees tab + Profile = 6 tabs, full senior nav preserved
       tabs = [...coreTabs, { href: '/mentor', label: 'Mentees', icon: UserCheck }, profileTab]
     } else {
       tabs = [...coreTabs, profileTab]

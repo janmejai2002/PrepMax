@@ -147,44 +147,34 @@ export function HostSlotSheet({
     setSubmitting(true)
     const supabase = createClient()
 
-    const { data: created, error } = await supabase
-      .from('slots')
-      .insert({
-        type,
-        host_id: me.id,
-        topic: topic.trim(),
-        internship: internship.trim() || null,
-        expert_areas: areas,
-        room_id: roomId,
-        start_at: startDate.toISOString(),
-        end_at: endDate.toISOString(),
-        capacity: cap,
-        description: description.trim() || null,
-        gd_type_desc: type === 'GD' ? gdTypeDesc.trim() || null : null,
-      })
-      .select('*')
-      .single()
+    const { data: result, error } = await supabase.rpc('create_slot', {
+      p_type:         type,
+      p_topic:        topic.trim(),
+      p_internship:   internship.trim(),
+      p_expert_areas: areas,
+      p_room_id:      roomId,
+      p_start_at:     startDate.toISOString(),
+      p_end_at:       endDate.toISOString(),
+      p_capacity:     cap,
+      p_description:  description.trim(),
+      p_gd_type_desc: type === 'GD' ? gdTypeDesc.trim() : '',
+      p_judge_ids:    [...coJudges],
+    })
 
-    if (error || !created) {
-      setSubmitting(false)
+    setSubmitting(false)
+
+    if (error || !result || result.error) {
+      const code = result?.error
       toast.error(
-        error?.message.includes('row-level security')
-          ? `You're not set up to host ${type} slots yet.`
-          : 'Could not post the slot. Please try again.'
+        code === 'host_time_conflict' ? 'You already have a slot at that time.'
+        : code === 'room_double_booked' ? 'That room is already booked for this time slot.'
+        : code === 'unauthorized' ? `You're not set up to host ${type} slots yet.`
+        : 'Could not post the slot. Please try again.'
       )
       return
     }
 
-    // Co-judges fire after the slot exists (RLS lets the host attach judges).
-    if (coJudges.size > 0) {
-      const { error: jErr } = await supabase
-        .from('slot_judges')
-        .insert([...coJudges].map((judge_id) => ({ slot_id: created.id, judge_id })))
-      if (jErr) toast.warning('Slot posted, but co-judges could not be added.')
-    }
-
-    setSubmitting(false)
-
+    const created = result.slot
     const feedSlot: FeedSlot = {
       ...(created as Omit<FeedSlot, 'room' | 'host' | 'my_enrollment'>),
       room: { name: room.name, location: room.location ?? '' },

@@ -18,7 +18,7 @@ export default async function HomePage() {
   const [profileRes, slotsRes, hostsRes, enrollRes] = await Promise.all([
     supabase
       .from('profiles')
-      .select('name, whatsapp, year, can_host_gd, can_host_pi, is_committee, is_crisp_admin, is_sac, is_mentor')
+      .select('name, whatsapp, year, can_host_gd, can_host_pi, is_committee, is_crisp_admin, is_sac, is_mentor, is_crisp_member')
       .eq('id', user.id)
       .single(),
     supabase
@@ -37,10 +37,17 @@ export default async function HomePage() {
   const profile = profileRes.data
   if (!profile) redirect('/onboarding')
 
+  // SAC's entire world is the rooms page — redirect them immediately
+  if (profile.is_sac) redirect('/admin/rooms')
+
+  const isSenior = !!(profile.can_host_gd || profile.can_host_pi)
+  const isCrispMember = !!profile.is_crisp_member
+
   const capabilities: HostCapabilities = {
     canHostGd: !!profile.can_host_gd,
     canHostPi: !!profile.can_host_pi,
-    canManageRooms: !!profile.is_crisp_admin || !!profile.is_sac,
+    // CRISP members can also manage rooms (toggle live/offline)
+    canManageRooms: !!profile.is_crisp_admin || !!profile.is_sac || isCrispMember,
   }
   const canHost =
     capabilities.canHostGd || capabilities.canHostPi || capabilities.canManageRooms
@@ -80,17 +87,20 @@ export default async function HomePage() {
     <div className="min-h-screen bg-background pb-nav">
       <SlotsFeed
         initialSlots={slots}
-        me={{ id: user.id, name: profile.name }}
+        me={{ id: user.id, name: profile.name, isSenior }}
         myWhatsapp={profile.whatsapp ?? null}
         capabilities={capabilities}
+        canJoinSlots={!isSenior}
         rooms={rooms}
         judges={judges}
       />
       <BottomNav
         isAdmin={!!(profile.is_crisp_admin || profile.is_sac)}
         isMentor={!!profile.is_mentor}
-        isSenior={!!(profile.can_host_gd || profile.can_host_pi)}
+        isSenior={isSenior}
         isCommittee={!!(profile.is_committee || profile.is_crisp_admin || profile.is_sac)}
+        isSac={!!profile.is_sac}
+        isCrispMember={isCrispMember}
       />
     </div>
   )

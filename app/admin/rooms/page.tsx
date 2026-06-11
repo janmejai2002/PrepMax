@@ -15,12 +15,17 @@ export default async function RoomsAdminPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('is_crisp_admin, is_sac')
+    .select('is_crisp_admin, is_sac, is_crisp_member')
     .eq('id', user.id)
     .single()
 
-  // Mirrors can_manage_rooms() in the DB — SAC and CRISP admin both manage rooms
-  if (!profile?.is_crisp_admin && !profile?.is_sac) redirect('/')
+  // SAC, CRISP admin, and CRISP members all have room management access
+  const canManage = !!(profile?.is_crisp_admin || profile?.is_sac || profile?.is_crisp_member)
+  if (!canManage) redirect('/')
+
+  const isSac = !!profile?.is_sac
+  const isCrispMember = !!profile?.is_crisp_member
+  const isAdmin = !!(profile?.is_crisp_admin || profile?.is_sac)
 
   const { data: rooms } = await supabase
     .from('rooms')
@@ -35,31 +40,39 @@ export default async function RoomsAdminPage() {
           <p className="text-sm text-muted-foreground">Toggle rooms live/offline and add new venues.</p>
         </div>
 
-        <div className="flex gap-2 flex-wrap">
-          <span className="flex-1 rounded-xl border bg-card px-3 py-2 text-center text-xs font-medium">
-            <Building2 className="h-3.5 w-3.5 inline mr-1" />
-            Rooms
-          </span>
-          <Link href="/admin/stats"
-            className="flex-1 rounded-xl border bg-muted px-3 py-2 text-center text-xs font-medium text-muted-foreground hover:bg-card transition-colors">
-            <BarChart3 className="h-3.5 w-3.5 inline mr-1" />
-            Stats
-          </Link>
-          <Link href="/mentor"
-            className="flex-1 rounded-xl border bg-muted px-3 py-2 text-center text-xs font-medium text-muted-foreground hover:bg-card transition-colors">
-            <Users className="h-3.5 w-3.5 inline mr-1" />
-            Juniors
-          </Link>
-          <Link href="/admin/roles"
-            className="flex-1 rounded-xl border bg-muted px-3 py-2 text-center text-xs font-medium text-muted-foreground hover:bg-card transition-colors">
-            <Users2 className="h-3.5 w-3.5 inline mr-1" />
-            Roles
-          </Link>
-        </div>
+        {/* Admin sub-nav: only for CRISP admin (not for SAC or plain CRISP members) */}
+        {isAdmin && !isSac && (
+          <div className="flex gap-2 flex-wrap">
+            <span className="flex-1 rounded-xl border bg-card px-3 py-2 text-center text-xs font-medium">
+              <Building2 className="h-3.5 w-3.5 inline mr-1" />
+              Rooms
+            </span>
+            <Link href="/admin/stats"
+              className="flex-1 rounded-xl border bg-muted px-3 py-2 text-center text-xs font-medium text-muted-foreground hover:bg-card transition-colors">
+              <BarChart3 className="h-3.5 w-3.5 inline mr-1" />
+              Stats
+            </Link>
+            <Link href="/mentor"
+              className="flex-1 rounded-xl border bg-muted px-3 py-2 text-center text-xs font-medium text-muted-foreground hover:bg-card transition-colors">
+              <Users className="h-3.5 w-3.5 inline mr-1" />
+              Juniors
+            </Link>
+            <Link href="/admin/roles"
+              className="flex-1 rounded-xl border bg-muted px-3 py-2 text-center text-xs font-medium text-muted-foreground hover:bg-card transition-colors">
+              <Users2 className="h-3.5 w-3.5 inline mr-1" />
+              Roles
+            </Link>
+          </div>
+        )}
 
-        <RoomsClient initialRooms={rooms ?? []} isSac={!!profile?.is_sac} />
+        <RoomsClient initialRooms={rooms ?? []} isSac={isSac} />
       </div>
-      <BottomNav isAdmin isCommittee />
+      <BottomNav
+        isAdmin={isAdmin}
+        isCommittee={isAdmin}
+        isSac={isSac}
+        isCrispMember={isCrispMember}
+      />
     </div>
   )
 }

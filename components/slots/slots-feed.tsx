@@ -23,6 +23,7 @@ interface SlotsFeedProps {
   me: Me
   myWhatsapp: string | null
   capabilities: HostCapabilities
+  canJoinSlots?: boolean
   rooms: RoomOption[]
   judges: JudgeOption[]
 }
@@ -46,6 +47,7 @@ export function SlotsFeed({
   me,
   myWhatsapp,
   capabilities,
+  canJoinSlots = true,
   rooms,
   judges,
 }: SlotsFeedProps) {
@@ -244,6 +246,7 @@ export function SlotsFeed({
               slot={slot}
               me={me}
               canManage={capabilities.canManageRooms}
+              canJoin={canJoinSlots}
               onSlotChange={handleSlotChange}
               onSlotRemoved={handleSlotRemoved}
             />

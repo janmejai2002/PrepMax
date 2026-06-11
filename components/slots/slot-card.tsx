@@ -43,11 +43,12 @@ interface SlotCardProps {
   slot: FeedSlot
   me: Me
   canManage: boolean
+  canJoin?: boolean
   onSlotChange: (slot: FeedSlot) => void
   onSlotRemoved: (slotId: string) => void
 }
 
-export function SlotCard({ slot, me, canManage, onSlotChange, onSlotRemoved }: SlotCardProps) {
+export function SlotCard({ slot, me, canManage, canJoin = true, onSlotChange, onSlotRemoved }: SlotCardProps) {
   const [joining, setJoining] = useState(false)
   const [leaving, setLeaving] = useState(false)
   const [cancelling, setCancelling] = useState(false)
@@ -407,7 +408,7 @@ export function SlotCard({ slot, me, canManage, onSlotChange, onSlotRemoved }: S
             <span className="rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-muted-foreground">
               Lineup confirmed
             </span>
-          ) : (
+          ) : canJoin ? (
             <button
               onClick={handleJoin}
               disabled={joining}
@@ -431,7 +432,7 @@ export function SlotCard({ slot, me, canManage, onSlotChange, onSlotRemoved }: S
                 'Join slot'
               )}
             </button>
-          )}
+          ) : null}
         </div>
       </div>
 

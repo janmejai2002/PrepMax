@@ -115,7 +115,7 @@ export function SlotDetailClient({ slot: initialSlot, me }: { slot: SlotDetail; 
   const isLive = slot.status === 'live'
   const isCompleted = slot.status === 'completed'
   const isCancelled = slot.status === 'cancelled'
-  const canJoin = !isLive && !isCompleted && !isCancelled && !enrollment && !slot.confirmed_at
+  const canJoin = !isLive && !isCompleted && !isCancelled && !enrollment && !slot.confirmed_at && !me.isSenior
   const mins = durationMins(slot.start_at, slot.end_at)
 
   async function handleJoin() {

@@ -28,6 +28,7 @@ export interface FeedSlot {
 export interface Me {
   id: string
   name: string
+  isSenior?: boolean
 }
 
 /** What a senior is allowed to host. Room-managers (SAC/CRISP) may host either type. */
