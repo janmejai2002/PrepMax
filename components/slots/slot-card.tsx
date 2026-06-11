@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import {
   Clock,
   MapPin,
@@ -11,6 +12,7 @@ import {
   Trash2,
   LogOut,
   Send,
+  ChevronRight,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
@@ -261,8 +263,13 @@ export function SlotCard({ slot, me, canManage, onSlotChange, onSlotRemoved }: S
           </div>
         </div>
 
-        {/* topic */}
-        <h3 className="text-[15px] font-semibold leading-snug">{slot.topic}</h3>
+        {/* topic — tappable to detail page */}
+        <Link href={`/slots/${slot.id}`} className="group flex items-start gap-1">
+          <h3 className="flex-1 text-[15px] font-semibold leading-snug group-hover:text-gd transition-colors">
+            {slot.topic}
+          </h3>
+          <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+        </Link>
 
         {/* expert areas */}
         {slot.expert_areas.length > 0 && (

@@ -59,6 +59,65 @@ export interface MentorOption {
   year: string
 }
 
+/** A participant entry in the slot detail roster. */
+export interface RosterEntry {
+  user_id: string
+  name: string
+  status: EnrollmentStatus
+  position: number | null
+}
+
+/** Co-judge on a slot. */
+export interface CoJudge {
+  id: string
+  name: string
+}
+
+/** Full slot detail as returned by get_slot_detail RPC. */
+export interface SlotDetail extends FeedSlot {
+  co_judges: CoJudge[]
+  roster: RosterEntry[] | { count: number }
+  is_host: boolean
+  is_judge: boolean
+  is_admin: boolean
+}
+
+/** A received-feedback row (my_received_feedback view). */
+export interface ReceivedFeedback {
+  id: string
+  slot_id: string
+  from_user_id: string
+  to_user_id: string
+  scores: Record<string, number>
+  tags: string[]
+  notes: string | null
+  created_at: string
+  slot_type: 'GD' | 'PI'
+  slot_topic: string
+  slot_start_at: string
+  host_name: string
+}
+
+/** Feedback score dimensions. */
+export const SCORE_DIMS = ['clarity', 'content', 'confidence', 'structure'] as const
+export type ScoreDim = typeof SCORE_DIMS[number]
+
+export const SCORE_DIM_LABELS: Record<ScoreDim, string> = {
+  clarity:    'Clarity',
+  content:    'Content',
+  confidence: 'Confidence',
+  structure:  'Structure',
+}
+
+export const FEEDBACK_TAGS_POSITIVE = [
+  'Strong opener', 'Data-driven', 'Clear structure', 'Good listener',
+  'Inclusive', 'Concise', 'Confident delivery', 'Creative ideas',
+]
+export const FEEDBACK_TAGS_IMPROVE = [
+  'Too verbose', 'Interrupted others', 'Lacked examples', 'Rushed ending',
+  'Low energy', 'Missed key points', 'Needed more structure',
+]
+
 /** Slot details returned by confirm_slot — drives the email body + calendar link. */
 export interface ConfirmSlotSlot {
   id: string

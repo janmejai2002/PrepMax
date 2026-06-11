@@ -1,12 +1,15 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+
+const IS_DEV = process.env.NODE_ENV === 'development'
 
 const ERROR_MESSAGES: Record<string, string> = {
   domain: 'Only @astra.xlri.ac.in email addresses are allowed.',
@@ -139,6 +142,14 @@ export default function LoginClient() {
             </form>
           )}
         </div>
+
+        {IS_DEV && (
+          <p className="text-center text-xs text-muted-foreground/60 mt-4">
+            <Link href="/dev-login" className="underline hover:text-muted-foreground">
+              Dev test login →
+            </Link>
+          </p>
+        )}
       </div>
     </div>
   )
