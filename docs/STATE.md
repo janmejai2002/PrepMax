@@ -5,7 +5,7 @@
 ---
 
 ## Current Phase
-**Phase 6 — Complete + Attendance Hardened. All phases 1-6 shipped. 112/112 tests green.**
+**Phase 6 — Complete + Attendance Hardened + Junior-Request Flow. All phases 1-6 shipped. 132/132 tests green.**
 
 ## Status
 
@@ -33,6 +33,7 @@
 | Migration 018 | ✅ Done | Fix doubts_feed: LEFT JOIN replaces EXISTS subquery so i_voted serialises correctly in PostgREST |
 | Migration 019 | ✅ Done | Attendance hardening: app_config (server-side HMAC key), used_checkin_tokens (replay prevention), generate_checkin_token, mark_attended_by_token, mark_attended_direct RPCs; check_in disabled |
 | Migration 020 | ✅ Done | Fix pgcrypto search_path: add `extensions` to SET search_path so hmac/digest functions resolve |
+| Migration 021 | ✅ Done | slot_requests + interests tables; 7 RPCs: create/cancel/express_interest/retract_interest/confirm_match/get_open_requests/get_my_requests |
 | /profile/[id] | ✅ Done | Public profile page: juniors show stats, seniors show hosting stats + open slots with join links |
 | /login | ✅ Done | Google OAuth + magic link |
 | /onboarding | ✅ Done | Name/phone/whatsapp/year/batch/section/roll/mentor |
@@ -42,6 +43,8 @@
 | /cockpit/[slotId] | ✅ Done | Host cockpit: QR code, rotating tokens (55s), realtime attendance roster, feedback drawer |
 | /checkin | ✅ Done | Now redirects to /myqr/[slotId] — self-check-in permanently disabled |
 | /myqr/[slotId] | ✅ Done | Junior personal QR page: HMAC-signed token, 90s TTL, auto-rotates |
+| /requests | ✅ Done | Senior-only anonymous practice request feed; "I'm available" toggle |
+| /my-requests | ✅ Done | Junior request management: post request, see interested seniors, WhatsApp intro, confirm match |
 | /profile | ✅ Done | Profile info + received feedback aggregates + per-session cards |
 | /mentor | ✅ Done | Mentor dashboard: assigned juniors with 360° stats |
 | /knowledge | ✅ Done | Committee-published prep content feed with function filters, expandable posts, post form |
@@ -52,7 +55,7 @@
 | dev seed users | ✅ Done | 4 test accounts via `npx tsx scripts/seed-dev-users.ts` |
 | Vercel deploy | ✅ Done | https://prep-max-alpha.vercel.app |
 | GitHub repo | ✅ Done | https://github.com/janmejai2002/PrepMax |
-| Tests | ✅ Done | 112/112 passing (19 new fraud-path tests) |
+| Tests | ✅ Done | 132/132 passing (20 new slot-request tests; fileParallelism=false prevents auth rate-limit flakes) |
 | lib/email-role.ts | ✅ Done | inferYearFromEmail + isCommitteeEmail + isSacEmail + isCrispEmail |
 
 ## Dev Test Credentials
@@ -122,3 +125,4 @@ Magic link works right now without any extra config.
 | 2026-06-11 | Session 10: Email→role mapping. Migration 016 (BEFORE INSERT trigger). lib/email-role.ts. Onboarding form locks year for b25/b26 emails. Dev seed + dev-login updated to b25/b26 addresses. 63/63 tests. |
 | 2026-06-11 | Session 11: A) 23 K+D integration tests — found + fixed doubts_feed i_voted bug (EXISTS→LEFT JOIN, migration 018). B) /profile/[id] public profile page (migration 017 get_public_profile RPC). C) Committee role model: year nullable, is_crisp_member flag, @xlri.ac.in trigger, isCommitteeEmail, crisp@/sacdelhi@ dev accounts. 93/93 tests. |
 | 2026-06-11 | Session 12: Attendance hardening (migrations 019+020). THREAT MODEL: junior cannot self-check-in. NEW: generate_checkin_token (HMAC-SHA256, 90s TTL, per-junior) + mark_attended_by_token (host-only, HMAC verify + replay prevention) + mark_attended_direct (host taps roster). check_in() disabled. /myqr/[slotId] junior QR page. Cockpit "Mark present" buttons. 19 fraud-path tests. 112/112 tests. |
+| 2026-06-11 | Session 13: Junior-request flow (migration 021). slot_requests + interests tables. 7 RPCs: create/cancel_slot_request, express/retract_interest, confirm_match, get_open_requests, get_my_requests. /requests senior feed (anonymous, "I'm available" toggle). /my-requests junior page (post form, interested seniors list, WhatsApp intro, confirm match). BottomNav updated with Requests tab (seniors→/requests, juniors→/my-requests). fileParallelism=false in vitest.config. 20 new tests. 132/132 tests. |

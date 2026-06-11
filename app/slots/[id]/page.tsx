@@ -54,7 +54,7 @@ export default async function SlotDetailPage({ params }: Props) {
           me={{ id: user.id, name: profile.name }}
         />
       </div>
-      <BottomNav isAdmin={profile.is_crisp_admin || profile.is_sac} />
+      <BottomNav isAdmin={!!(profile.is_crisp_admin || profile.is_sac)} isSenior={!!(profile.is_crisp_admin || profile.is_sac)} />
     </div>
   )
 }

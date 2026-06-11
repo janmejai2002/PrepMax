@@ -172,6 +172,50 @@ export interface ConfirmSlotSlot {
   host_name: string
 }
 
+// ─────────────── SLOT REQUESTS ───────────────
+
+export type SlotRequestStatus = 'open' | 'matched' | 'cancelled'
+
+export const REQUEST_LOCATIONS = [
+  'Common Room',
+  'Library',
+  'Nescafe Corner',
+  'Other',
+] as const
+export type RequestLocation = typeof REQUEST_LOCATIONS[number]
+
+export interface InterestedSenior {
+  senior_id: string
+  name: string
+  whatsapp: string
+  phone: string
+  interested_at: string
+}
+
+export interface MySlotRequest {
+  id: string
+  location: string
+  preferred_at: string
+  background: string
+  description: string
+  status: SlotRequestStatus
+  matched_senior_id: string | null
+  matched_at: string | null
+  created_at: string
+  interested_seniors: InterestedSenior[]
+}
+
+export interface OpenRequest {
+  id: string
+  location: string
+  preferred_at: string
+  background: string
+  description: string
+  created_at: string
+  interest_count: number
+  i_am_interested: boolean
+}
+
 /** Full payload from the confirm_slot RPC. `error` is set on the failure path. */
 export interface ConfirmSlotResult {
   slot: ConfirmSlotSlot

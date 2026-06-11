@@ -212,7 +212,11 @@ export default async function ProfilePage() {
           <SignOutButton />
         </div>
       </div>
-      <BottomNav isAdmin={!!(profile.is_crisp_admin || profile.is_sac)} isMentor={!!profile.is_mentor} />
+      <BottomNav
+        isAdmin={!!(profile.is_crisp_admin || profile.is_sac)}
+        isMentor={!!profile.is_mentor}
+        isSenior={!!(profile.can_host_gd || profile.can_host_pi || profile.is_committee || profile.is_crisp_admin || profile.is_sac)}
+      />
     </div>
   )
 }

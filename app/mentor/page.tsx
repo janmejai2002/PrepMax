@@ -185,7 +185,7 @@ export default async function MentorPage() {
           </div>
         )}
       </div>
-      <BottomNav isAdmin={isAdmin} />
+      <BottomNav isAdmin={isAdmin} isSenior={true} />
     </div>
   )
 }

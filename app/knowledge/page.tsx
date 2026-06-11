@@ -38,7 +38,7 @@ export default async function KnowledgePage() {
   return (
     <div className="min-h-screen bg-background pb-nav">
       <KnowledgeFeedClient initialPosts={typedPosts} canPost={canPost} />
-      <BottomNav isAdmin={isAdmin} />
+      <BottomNav isAdmin={isAdmin} isSenior={!!(profile?.is_committee || profile?.is_crisp_admin || profile?.is_sac)} />
     </div>
   )
 }

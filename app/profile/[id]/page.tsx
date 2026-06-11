@@ -239,6 +239,7 @@ export default async function PublicProfilePage({
       <BottomNav
         isAdmin={!!(viewer?.is_crisp_admin || viewer?.is_sac)}
         isMentor={!!viewer?.is_mentor}
+        isSenior={!!(viewer?.is_crisp_admin || viewer?.is_sac || viewer?.is_mentor)}
       />
     </div>
   )

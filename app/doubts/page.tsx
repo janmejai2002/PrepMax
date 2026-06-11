@@ -28,7 +28,7 @@ export default async function DoubtsPage() {
   return (
     <div className="min-h-screen bg-background pb-nav">
       <DoubtsFeedClient initialDoubts={(doubts ?? []) as Doubt[]} myUserId={user.id} />
-      <BottomNav isAdmin={isAdmin} />
+      <BottomNav isAdmin={isAdmin} isSenior={isAdmin} />
     </div>
   )
 }

@@ -9,6 +9,7 @@ import {
   CircleUser,
   ShieldCheck,
   UserCheck,
+  ClipboardList,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -22,17 +23,29 @@ const TABS = [
 export function BottomNav({
   isAdmin = false,
   isMentor = false,
+  isSenior = false,
 }: {
   isAdmin?: boolean
   isMentor?: boolean
+  isSenior?: boolean
 }) {
   const pathname = usePathname()
-  let tabs = [...TABS]
+  const requestsHref = isSenior ? '/requests' : '/my-requests'
+  // 5-tab base: Slots · Requests · Knowledge · Doubts · Profile
+  // Role extras (Admin/Mentor) replace Profile when active to stay at 5 tabs max
+  const baseTabs = [
+    { href: '/', label: 'Slots', icon: CalendarRange },
+    { href: requestsHref, label: 'Requests', icon: ClipboardList },
+    { href: '/knowledge', label: 'Knowledge', icon: BookOpen },
+    { href: '/doubts', label: 'Doubts', icon: MessageCircleQuestion },
+    { href: '/profile', label: 'Profile', icon: CircleUser },
+  ]
+  let tabs = [...baseTabs]
   if (isMentor && !isAdmin) {
-    tabs = [...TABS, { href: '/mentor', label: 'Mentees', icon: UserCheck }]
+    tabs = [...baseTabs.slice(0, 4), { href: '/mentor', label: 'Mentees', icon: UserCheck }]
   }
   if (isAdmin) {
-    tabs = [...TABS, { href: '/admin/stats', label: 'Admin', icon: ShieldCheck }]
+    tabs = [...baseTabs.slice(0, 4), { href: '/admin/stats', label: 'Admin', icon: ShieldCheck }]
   }
 
   return (
