@@ -16,6 +16,7 @@ import type {
 } from '@/lib/types'
 
 type Filter = 'all' | SlotType
+type View = 'discover' | 'mine'
 
 interface SlotsFeedProps {
   initialSlots: FeedSlot[]
@@ -51,6 +52,7 @@ export function SlotsFeed({
   const [slots, setSlots] = useState<FeedSlot[]>(initialSlots)
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
+  const [view, setView] = useState<View>('discover')
   const [hostOpen, setHostOpen] = useState(false)
 
   const canHost =
@@ -78,6 +80,7 @@ export function SlotsFeed({
                     ...s,
                     enrolled_count: next.enrolled_count ?? s.enrolled_count,
                     status: next.status ?? s.status,
+                    confirmed_at: next.confirmed_at ?? s.confirmed_at,
                     topic: next.topic ?? s.topic,
                     start_at: next.start_at ?? s.start_at,
                   }
@@ -93,9 +96,15 @@ export function SlotsFeed({
     }
   }, [])
 
+  const myCount = useMemo(
+    () => slots.filter((s) => s.my_enrollment).length,
+    [slots]
+  )
+
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
     return slots.filter((s) => {
+      if (view === 'mine' && !s.my_enrollment) return false
       if (filter !== 'all' && s.type !== filter) return false
       if (!q) return true
       return (
@@ -105,7 +114,7 @@ export function SlotsFeed({
         (s.host?.name ?? '').toLowerCase().includes(q)
       )
     })
-  }, [slots, query, filter])
+  }, [slots, query, filter, view])
 
   function handleSlotChange(updated: FeedSlot) {
     setSlots((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))
@@ -135,6 +144,41 @@ export function SlotsFeed({
           {firstName} <span className="align-middle">👋</span>
         </h1>
       </header>
+
+      {/* Discover / My Slots toggle */}
+      <div className="px-4 pt-2">
+        <div className="flex h-10 items-center gap-1 rounded-full border border-border/70 bg-card p-1">
+          {([
+            { value: 'discover', label: 'Discover' },
+            { value: 'mine', label: 'My Slots' },
+          ] as const).map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => setView(value)}
+              className={cn(
+                'flex h-full flex-1 items-center justify-center gap-1.5 rounded-full text-[13px] font-semibold transition-all',
+                view === value
+                  ? 'bg-secondary text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {label}
+              {value === 'mine' && myCount > 0 && (
+                <span
+                  className={cn(
+                    'flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums',
+                    view === 'mine'
+                      ? 'bg-gd text-white'
+                      : 'bg-muted text-muted-foreground'
+                  )}
+                >
+                  {myCount}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* search + filter — sticky while scrolling the feed */}
       <div className="sticky top-0 z-40 space-y-3 bg-background/85 px-4 py-3 backdrop-blur-xl">
@@ -178,14 +222,18 @@ export function SlotsFeed({
               <Sparkles className="h-5 w-5 text-gd" />
             </span>
             <p className="text-sm font-medium">
-              {query || filter !== 'all'
-                ? 'Nothing matches that — try widening the search.'
-                : 'No slots yet'}
+              {view === 'mine' && !query && filter === 'all'
+                ? "You haven't joined any slots yet"
+                : query || filter !== 'all'
+                  ? 'Nothing matches that — try widening the search.'
+                  : 'No slots yet'}
             </p>
             <p className="max-w-60 text-xs leading-relaxed text-muted-foreground">
-              {query || filter !== 'all'
-                ? 'New slots drop through the day.'
-                : 'Seniors usually post around evenings. Check back after dinner 👀'}
+              {view === 'mine' && !query && filter === 'all'
+                ? 'Slots you join or waitlist for will show up here.'
+                : query || filter !== 'all'
+                  ? 'New slots drop through the day.'
+                  : 'Seniors usually post around evenings. Check back after dinner 👀'}
             </p>
           </div>
         ) : (

@@ -5,7 +5,7 @@
 ---
 
 ## Current Phase
-**Phase 2 — Crown Jewel — IN PROGRESS. All seat RPCs done (join/leave/cancel/edit) + slots feed UI + hosting form + UI wiring + /stress PASSED. Remaining: proxy.ts rename + nice-to-haves.**
+**Phase 2 — Crown Jewel — IN PROGRESS. All seat RPCs done (join/leave/cancel/edit/confirm) + slots feed UI + hosting form + UI wiring + My Slots toggle + host "Confirm & notify" (Gmail invite) + /stress PASSED. Remaining: nice-to-haves (slot detail view).**
 
 ## Status
 
@@ -49,6 +49,11 @@
 | Demo slots | ✅ Done | 7 seeded slots (4 GD + 3 PI), varied fill states, clean IST evening times |
 | Supabase Site URL | ✅ Done | Fixed by Janmejai — Vercel magic links no longer redirect to localhost |
 | /stress load test | ✅ Done | `scripts/stress-test.ts`: 100 concurrent `join_slot` → exactly 6 confirmed, 94 waitlisted, 0 oversell, 0 duplicates, positions contiguous, slot→full. Race wall-time ~1s. All 10 assertions pass. Caches JWTs to `.tmp-stress-sessions.json` (gitignored) to dodge auth rate limit on reruns |
+| Migration 008 | ✅ Done | `mentor_id` on profiles + `confirmed_at` on slots + `mentor_directory` view + `confirm_slot` RPC + `join_slot` recreated (re-join support from 006 **plus** new `lineup_confirmed` guard) — applied |
+| confirm_slot RPC | ✅ Done | Host/admin marks lineup final + returns email recipients. SECURITY DEFINER, authz = host or `can_manage_rooms()`. Returns `{slot, students, to[], cc[]}`: confirmed students in `to`, their mentors (deduped, null-free) in `cc`. Refuses empty lineup (`no_confirmed_students`), idempotent stamp, blocks new joins once set. 6/6 Vitest tests (suite 36/36) |
+| My Slots toggle | ✅ Done | Discover / My Slots segmented toggle on the feed (count badge). My Slots = client-filter on `my_enrollment` (no extra query). Per-view empty states. Verified at 390px (filters to exactly the enrolled slots) |
+| Host "Confirm & notify" | ✅ Done | Button on the host's own slot card → `confirm_slot` RPC → opens the host's **own Gmail compose** (`lib/email.ts` pure builders) pre-filled: To=confirmed students, CC=their CRISP mentors, body=GD details + "Add to Google Calendar" link. Re-tappable as "Re-send"; "Lineup confirmed" badge + join-blocked state for juniors. **No server mailer** — sidesteps Iron Rule #4. Verified 390px: To=student, CC=mentor, calendar link present, slot locked. 4/4 email-helper Vitest tests |
+| Mentor field | ✅ Done | Onboarding mentor picker (Select from `mentor_directory`, optional) + Profile page "CRISP Mentor" row. Mentors = existing `is_mentor` users |
 
 ## Test accounts
 | Email | Year | Flags | Purpose |
@@ -70,8 +75,10 @@ Magic link works right now without any extra config.
 - **Seed counter display bug**: `seed.ts` logs "0 fake profiles seeded" due to a closure quirk in parallel batches, but all 202 rows are confirmed in the DB. Non-blocking.
 
 ## Exact Next Step for Claude — Phase 2 (remaining)
-All seat-management RPCs done (join/leave/cancel/edit, 26/26 tests) + hosting form + UI wiring (leave/cancel/edit) shipped & verified + `/stress` load test PASSED (zero oversell under 100 concurrent joins) + `proxy.ts` rename done (build clean). Remaining:
-1. Nice-to-have: slot detail view, "My slots" section/tab showing joined + waitlisted slots.
+All seat-management RPCs done (join/leave/cancel/edit/**confirm**, 36/36 tests) + hosting form + UI wiring + **My Slots toggle** + **host "Confirm & notify" Gmail invite** + mentor field shipped & verified at 390px + `/stress` PASSED. Remaining:
+1. Nice-to-have: **slot detail view** (tap a card → full slot page with description, co-judges, roster). This is the last Phase-2 item; then move to Phase 3 per docs/SPEC.md.
+
+Follow-ups logged (not blocking): auto-update/cancel the calendar invite when a host edits/cancels a confirmed slot (we chose manual-confirm, not full lifecycle); backfill `mentor_id` for the 200 seeded juniors if needed for demos.
 
 ## Session Log
 | Date | What happened |
@@ -86,3 +93,4 @@ All seat-management RPCs done (join/leave/cancel/edit, 26/26 tests) + hosting fo
 | 2026-06-11 | Session 5 (cont.): Migration 007 — `cancel_slot` (host/admin cancels whole slot, all enrolments released, version bump) + `edit_slot` (optimistic version lock; capacity-raise auto-promotes waitlist; capacity-below-enrolled rejected). 9 new Vitest tests; suite 26/26 green. All seat RPCs complete. Next: hosting form + wiring leave/cancel/edit into the UI. |
 | 2026-06-11 | Session 5 (cont.): **Hosting form shipped** — "Host a slot" FAB + mobile sheet (type/topic/company/tags/room/time/seats/format/description/co-judges). Inserts slot + slot_judges, prepends to feed. Verified end-to-end at 390px via Playwright (authed with new `scripts/dev-session.ts` helper); slot + co-judge confirmed in DB then cleaned up. Recorded UI-registry priority preference to memory (shadcn → Origin UI → Shadcnblocks → Magic UI → Charts; install via `npx shadcn add`). |
 | 2026-06-11 | Session 6: **`/stress` load test PASSED** — 100 concurrent `join_slot` calls on a 6-seat slot → exactly 6 confirmed, 94 waitlisted, 0 oversell, 0 duplicates, contiguous positions, slot→full (race ~1s). Iron Rule #1 holds under load. Fixed latent bug in `scripts/stress-test.ts`: the burst+spacing+JWT-cache auth design described in the header comments was never wired in, so sign-ins tripped Supabase's auth rate limit; now caches JWTs to `.tmp-stress-sessions.json` (gitignored). |
+| 2026-06-11 | Session 7: **My Slots toggle + host "Confirm & notify" + mentor field.** Migration 008 (`mentor_id`, `confirmed_at`, `mentor_directory`, `confirm_slot` RPC, `join_slot` recreated = 006 re-join support + new `lineup_confirmed` guard). New pure `lib/email.ts` builders (Google Calendar link, Gmail compose URL) — **no server mailer**, the host sends from their own Gmail, so Iron Rule #4 doesn't apply. Discover/My Slots toggle on the feed; "Confirm & notify" on the host's own card opens a pre-filled Gmail compose (To=confirmed students, CC=their mentors, body=GD details + Add-to-Calendar link); "Lineup confirmed" badge + join-lock. Mentor picker in onboarding + Profile row. 10 new Vitest tests (6 confirm_slot + 4 email), suite 36/36. Verified end-to-end at 390px via Playwright (To=student, CC=mentor, calendar link, slot locked). Added `scripts/resume-fresh.ps1` (auto-handoff helper). |

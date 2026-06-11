@@ -10,11 +10,14 @@ import {
   Pencil,
   Trash2,
   LogOut,
+  Send,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { formatSlotTime, waPhone, initials } from '@/lib/format'
+import { buildSlotConfirmation, buildGmailCompose } from '@/lib/email'
+import type { ConfirmSlotResult } from '@/lib/types'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,6 +49,7 @@ export function SlotCard({ slot, me, canManage, onSlotChange, onSlotRemoved }: S
   const [joining, setJoining] = useState(false)
   const [leaving, setLeaving] = useState(false)
   const [cancelling, setCancelling] = useState(false)
+  const [confirming, setConfirming] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [confirmCancel, setConfirmCancel] = useState(false)
   const supabase = createClient()
@@ -139,6 +143,39 @@ export function SlotCard({ slot, me, canManage, onSlotChange, onSlotRemoved }: S
     onSlotRemoved(slot.id)
   }
 
+  async function handleConfirm() {
+    setConfirming(true)
+    const { data, error } = await supabase.rpc('confirm_slot', { p_slot_id: slot.id })
+    setConfirming(false)
+
+    if (error || data?.error) {
+      const msg =
+        data?.error === 'unauthorized'
+          ? "You're not allowed to confirm this slot."
+          : data?.error === 'no_confirmed_students'
+            ? 'No one has a confirmed seat yet — nobody to notify.'
+            : data?.error === 'slot_not_confirmable'
+              ? 'This slot can no longer be confirmed.'
+              : 'Could not prepare the email — try again.'
+      toast.error(msg)
+      return
+    }
+
+    const result = data as ConfirmSlotResult
+    const { subject, body } = buildSlotConfirmation(result.slot)
+    const url = buildGmailCompose({ to: result.to, cc: result.cc, subject, body })
+    window.open(url, '_blank', 'noopener,noreferrer')
+
+    // Reflect the now-final lineup locally (joins are blocked server-side)
+    onSlotChange({
+      ...slot,
+      confirmed_at: slot.confirmed_at ?? new Date().toISOString(),
+    })
+    toast.success(
+      `Gmail opened — ${result.to.length} student${result.to.length === 1 ? '' : 's'} to notify.`
+    )
+  }
+
   const whatsappUrl = (() => {
     const phone = waPhone(slot.host?.whatsapp ?? null)
     if (!phone) return null
@@ -191,6 +228,12 @@ export function SlotCard({ slot, me, canManage, onSlotChange, onSlotRemoved }: S
                 {seatsLeft} {seatsLeft === 1 ? 'seat' : 'seats'} left
               </span>
             ) : null}
+
+            {slot.confirmed_at && (
+              <span className="rounded-full bg-success/15 px-2.5 py-1 text-[11px] font-semibold text-success">
+                Lineup confirmed
+              </span>
+            )}
 
             {canManageThis && (
               <DropdownMenu>
@@ -287,9 +330,23 @@ export function SlotCard({ slot, me, canManage, onSlotChange, onSlotRemoved }: S
           </div>
 
           {isOwnSlot ? (
-            <span className="rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-muted-foreground">
-              Your slot
-            </span>
+            <button
+              onClick={handleConfirm}
+              disabled={confirming}
+              className={cn(
+                'flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-xs font-semibold transition-all active:scale-[0.97] disabled:opacity-70',
+                slot.confirmed_at
+                  ? 'border border-border bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                  : 'bg-foreground text-background hover:opacity-90'
+              )}
+            >
+              {confirming ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Send className="h-3.5 w-3.5" />
+              )}
+              {slot.confirmed_at ? 'Re-send' : 'Confirm & notify'}
+            </button>
           ) : enrollment?.status === 'confirmed' ? (
             <div className="flex items-center gap-2">
               <span className="rounded-full bg-success/15 px-3 py-1.5 text-xs font-semibold text-success">
@@ -339,6 +396,10 @@ export function SlotCard({ slot, me, canManage, onSlotChange, onSlotRemoved }: S
             </div>
           ) : isLive ? (
             <span className="text-xs font-medium text-muted-foreground">In session</span>
+          ) : slot.confirmed_at ? (
+            <span className="rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+              Lineup confirmed
+            </span>
           ) : (
             <button
               onClick={handleJoin}

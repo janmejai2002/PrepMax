@@ -28,6 +28,16 @@ export default async function ProfilePage() {
 
   if (!profile) redirect('/onboarding')
 
+  let mentorName: string | null = null
+  if (profile.mentor_id) {
+    const { data: mentor } = await supabase
+      .from('mentor_directory')
+      .select('name')
+      .eq('id', profile.mentor_id)
+      .single()
+    mentorName = mentor?.name ?? null
+  }
+
   const flags = FLAG_LABELS.filter(([key]) => profile[key])
 
   return (
@@ -65,6 +75,7 @@ export default async function ProfilePage() {
             ['Roll', profile.roll],
             ['Phone', profile.phone],
             ['WhatsApp', profile.whatsapp],
+            ['CRISP Mentor', mentorName],
           ].map(([label, value]) => (
             <div
               key={label}

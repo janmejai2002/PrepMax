@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { toast } from 'sonner'
+import type { MentorOption } from '@/lib/types'
 
 const schema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -32,6 +33,7 @@ const schema = z.object({
   batch: z.string().min(1, 'Required'),
   section: z.string().min(1, 'Required'),
   roll: z.string().min(1, 'Required'),
+  mentor_id: z.string().optional(),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -39,9 +41,10 @@ type FormValues = z.infer<typeof schema>
 interface Props {
   userId: string
   email: string
+  mentors: MentorOption[]
 }
 
-export default function OnboardingForm({ userId, email }: Props) {
+export default function OnboardingForm({ userId, email, mentors }: Props) {
   const router = useRouter()
   const supabase = createClient()
 
@@ -55,6 +58,7 @@ export default function OnboardingForm({ userId, email }: Props) {
       batch: '',
       section: '',
       roll: '',
+      mentor_id: undefined,
     },
   })
 
@@ -63,6 +67,7 @@ export default function OnboardingForm({ userId, email }: Props) {
       id: userId,
       email,
       ...values,
+      mentor_id: values.mentor_id || null,
     })
 
     if (error) {
@@ -183,6 +188,33 @@ export default function OnboardingForm({ userId, email }: Props) {
             )}
           />
         </div>
+
+        {mentors.length > 0 && (
+          <FormField
+            control={form.control}
+            name="mentor_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>CRISP mentor (optional)</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Select your mentor" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {mentors.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <Button
           type="submit"

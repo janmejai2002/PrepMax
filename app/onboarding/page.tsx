@@ -18,6 +18,11 @@ export default async function OnboardingPage() {
 
   if (profile) redirect('/')
 
+  const { data: mentors } = await supabase
+    .from('mentor_directory')
+    .select('id, name, year')
+    .order('name')
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md space-y-6">
@@ -27,7 +32,11 @@ export default async function OnboardingPage() {
             This takes 30 seconds and won&apos;t be asked again.
           </p>
         </div>
-        <OnboardingForm userId={user.id} email={user.email ?? ''} />
+        <OnboardingForm
+          userId={user.id}
+          email={user.email ?? ''}
+          mentors={mentors ?? []}
+        />
       </div>
     </div>
   )

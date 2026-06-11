@@ -17,6 +17,7 @@ export interface FeedSlot {
   capacity: number
   enrolled_count: number
   status: SlotStatus
+  confirmed_at: string | null
   version: number
   share_slug: string
   room: { name: string; location: string } | null
@@ -49,4 +50,35 @@ export interface RoomOption {
 export interface JudgeOption {
   id: string
   name: string
+}
+
+/** A mentor a junior can pick as their CRISP mentor (from mentor_directory). */
+export interface MentorOption {
+  id: string
+  name: string
+  year: string
+}
+
+/** Slot details returned by confirm_slot — drives the email body + calendar link. */
+export interface ConfirmSlotSlot {
+  id: string
+  type: SlotType
+  topic: string
+  internship: string | null
+  start_at: string
+  end_at: string
+  gd_type_desc: string | null
+  description: string | null
+  room_name: string | null
+  room_location: string | null
+  host_name: string
+}
+
+/** Full payload from the confirm_slot RPC. `error` is set on the failure path. */
+export interface ConfirmSlotResult {
+  slot: ConfirmSlotSlot
+  students: { name: string; email: string }[]
+  to: string[]
+  cc: string[]
+  error?: string
 }
