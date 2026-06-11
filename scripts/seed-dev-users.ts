@@ -4,11 +4,11 @@
  * Creates 4 test accounts for stakeholder demos / phone testing.
  * Run with: npx tsx scripts/seed-dev-users.ts
  *
- * Credentials (same password for all):
- *   dev.junior@astra.xlri.ac.in  — first year, no flags
- *   dev.senior@astra.xlri.ac.in  — second year, can_host_gd + can_host_pi + is_mentor
- *   dev.crisp@astra.xlri.ac.in   — second year, all flags + is_crisp_admin
- *   dev.sac@astra.xlri.ac.in     — second year, all flags + is_crisp_admin + is_sac
+ * Emails follow the XLRI batch-year convention:
+ *   b26001@astra.xlri.ac.in  — first year (junior)
+ *   b25001@astra.xlri.ac.in  — second year (senior), can_host_gd + can_host_pi + is_mentor
+ *   b25002@astra.xlri.ac.in  — second year (senior), all flags + is_crisp_admin
+ *   b25003@astra.xlri.ac.in  — second year (senior), all flags + is_crisp_admin + is_sac
  *
  *   Password: PrepMax@dev1
  */
@@ -34,11 +34,11 @@ const PASSWORD = 'PrepMax@dev1'
 
 const DEV_USERS = [
   {
-    email: 'dev.junior@astra.xlri.ac.in',
+    email: 'b26001@astra.xlri.ac.in',
     profile: {
       name:          'Dev Junior',
-      year:          'first',
-      batch:         'PGDM 2025',
+      year:          'first',   // enforced by DB trigger (b26 → first)
+      batch:         'PGDM 2026',
       section:       'A',
       roll:          'DEV001',
       can_host_gd:   false,
@@ -50,11 +50,11 @@ const DEV_USERS = [
     },
   },
   {
-    email: 'dev.senior@astra.xlri.ac.in',
+    email: 'b25001@astra.xlri.ac.in',
     profile: {
       name:          'Dev Senior',
-      year:          'second',
-      batch:         'PGDM 2024',
+      year:          'second',  // enforced by DB trigger (b25 → second)
+      batch:         'PGDM 2025',
       section:       'B',
       roll:          'DEV002',
       can_host_gd:   true,
@@ -66,11 +66,11 @@ const DEV_USERS = [
     },
   },
   {
-    email: 'dev.crisp@astra.xlri.ac.in',
+    email: 'b25002@astra.xlri.ac.in',
     profile: {
       name:          'Dev CRISP Admin',
-      year:          'second',
-      batch:         'PGDM 2024',
+      year:          'second',  // enforced by DB trigger (b25 → second)
+      batch:         'PGDM 2025',
       section:       'C',
       roll:          'DEV003',
       can_host_gd:   true,
@@ -82,11 +82,11 @@ const DEV_USERS = [
     },
   },
   {
-    email: 'dev.sac@astra.xlri.ac.in',
+    email: 'b25003@astra.xlri.ac.in',
     profile: {
       name:          'Dev SAC Admin',
-      year:          'second',
-      batch:         'PGDM 2024',
+      year:          'second',  // enforced by DB trigger (b25 → second)
+      batch:         'PGDM 2025',
       section:       'D',
       roll:          'DEV004',
       can_host_gd:   true,

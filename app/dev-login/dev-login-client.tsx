@@ -17,29 +17,29 @@ interface DevPersona {
 const PERSONAS: DevPersona[] = [
   {
     label: 'Junior',
-    description: 'First-year student, no hosting rights, no flags',
-    email: 'dev.junior@astra.xlri.ac.in',
+    description: 'First-year student (b26), no hosting rights, no flags',
+    email: 'b26001@astra.xlri.ac.in',
     password: 'PrepMax@dev1',
     badge: 'bg-muted text-muted-foreground',
   },
   {
     label: 'Senior (host)',
-    description: 'Second-year, can host GD + PI, is_mentor',
-    email: 'dev.senior@astra.xlri.ac.in',
+    description: 'Second-year (b25), can host GD + PI, is_mentor',
+    email: 'b25001@astra.xlri.ac.in',
     password: 'PrepMax@dev1',
     badge: 'bg-gd-soft text-gd',
   },
   {
     label: 'Senior + CRISP admin',
-    description: 'All flags ON except SAC, can manage rooms',
-    email: 'dev.crisp@astra.xlri.ac.in',
+    description: 'Second-year (b25), all flags ON except SAC, can manage rooms',
+    email: 'b25002@astra.xlri.ac.in',
     password: 'PrepMax@dev1',
     badge: 'bg-pi-soft text-pi',
   },
   {
     label: 'Senior + SAC',
-    description: 'Full admin: is_sac=true, all flags ON',
-    email: 'dev.sac@astra.xlri.ac.in',
+    description: 'Second-year (b25), full admin: is_sac=true, all flags ON',
+    email: 'b25003@astra.xlri.ac.in',
     password: 'PrepMax@dev1',
     badge: 'bg-destructive/15 text-destructive',
   },
@@ -115,7 +115,7 @@ export function DevLoginClient() {
         <p className="text-[11px] font-semibold text-muted-foreground">Credentials (all accounts)</p>
         <p className="font-mono text-xs">Password: <span className="font-bold">PrepMax@dev1</span></p>
         <p className="text-[11px] text-muted-foreground">
-          Email = <code>dev.[role]@astra.xlri.ac.in</code>
+          Emails: <code>b26001</code> (junior) · <code>b25001-003</code> (seniors)
         </p>
       </div>
 

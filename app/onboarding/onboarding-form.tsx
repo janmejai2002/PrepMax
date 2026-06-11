@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/select'
 import { toast } from 'sonner'
 import type { MentorOption } from '@/lib/types'
+import { inferYearFromEmail } from '@/lib/email-role'
 
 const schema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -47,6 +48,7 @@ interface Props {
 export default function OnboardingForm({ userId, email, mentors }: Props) {
   const router = useRouter()
   const supabase = createClient()
+  const inferredYear = inferYearFromEmail(email)
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -54,7 +56,7 @@ export default function OnboardingForm({ userId, email, mentors }: Props) {
       name: '',
       phone: '',
       whatsapp: '',
-      year: 'first',
+      year: inferredYear ?? 'first',
       batch: '',
       section: '',
       roll: '',
@@ -125,27 +127,37 @@ export default function OnboardingForm({ userId, email, mentors }: Props) {
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name="year"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Year</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger className="h-11">
-                    <SelectValue placeholder="Select year" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="first">1st Year</SelectItem>
-                  <SelectItem value="second">2nd Year</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {inferredYear ? (
+          <div className="space-y-2">
+            <p className="text-sm font-medium leading-none">Year</p>
+            <div className="h-11 flex items-center rounded-md border bg-muted px-3 text-sm text-muted-foreground">
+              {inferredYear === 'second' ? '2nd Year (Senior)' : '1st Year (Junior)'}
+              <span className="ml-auto text-xs opacity-60">set from your email</span>
+            </div>
+          </div>
+        ) : (
+          <FormField
+            control={form.control}
+            name="year"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Year</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Select year" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="first">1st Year</SelectItem>
+                    <SelectItem value="second">2nd Year</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <div className="grid grid-cols-3 gap-3">
           <FormField

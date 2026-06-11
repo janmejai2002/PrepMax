@@ -28,6 +28,7 @@
 | Migration 013 | ✅ Done | doubts + doubt_answers + doubt_votes + post/answer/vote/accept RPCs + doubts_feed view |
 | Migration 014 | ✅ Done | reviews table (NO user_id — Iron Rule #7), dedup_hash, batch release (≥3), submit_review + get_my_slot_reviews RPCs |
 | Migration 015 | ✅ Done | junior_profile_360 view + daily_stats view + room_now view |
+| Migration 016 | ✅ Done | BEFORE INSERT trigger: b25NNN → year=second (senior), b26NNN → year=first (junior) |
 | /login | ✅ Done | Google OAuth + magic link |
 | /onboarding | ✅ Done | Name/phone/whatsapp/year/batch/section/roll/mentor |
 | /admin/rooms | ✅ Done | CRISP-admin-only room management |
@@ -45,18 +46,20 @@
 | dev seed users | ✅ Done | 4 test accounts via `npx tsx scripts/seed-dev-users.ts` |
 | Vercel deploy | ✅ Done | https://prep-max-alpha.vercel.app |
 | GitHub repo | ✅ Done | https://github.com/janmejai2002/PrepMax |
-| Tests | ✅ Done | 58/58 passing |
+| Tests | ✅ Done | 63/63 passing |
+| lib/email-role.ts | ✅ Done | inferYearFromEmail utility (b25→second, b26→first, else null) |
 
 ## Dev Test Credentials
 
-Run `npx tsx scripts/seed-dev-users.ts` to create these accounts (idempotent):
+Run `npx tsx scripts/seed-dev-users.ts` to create these accounts (idempotent).
+Emails follow the XLRI batch-year convention (b26 = junior, b25 = senior):
 
 | Email | Type | Password |
 |---|---|---|
-| `dev.junior@astra.xlri.ac.in` | Junior (first-year, no flags) | `PrepMax@dev1` |
-| `dev.senior@astra.xlri.ac.in` | Senior (can host GD+PI, is_mentor) | `PrepMax@dev1` |
-| `dev.crisp@astra.xlri.ac.in` | CRISP Admin (all flags + is_crisp_admin) | `PrepMax@dev1` |
-| `dev.sac@astra.xlri.ac.in` | SAC Admin (all flags + is_crisp_admin + is_sac) | `PrepMax@dev1` |
+| `b26001@astra.xlri.ac.in` | Junior (first-year, no flags) | `PrepMax@dev1` |
+| `b25001@astra.xlri.ac.in` | Senior (can host GD+PI, is_mentor) | `PrepMax@dev1` |
+| `b25002@astra.xlri.ac.in` | CRISP Admin (all flags + is_crisp_admin) | `PrepMax@dev1` |
+| `b25003@astra.xlri.ac.in` | SAC Admin (all flags + is_crisp_admin + is_sac) | `PrepMax@dev1` |
 
 Dev login URL (local): http://localhost:3000/dev-login
 Dev login URL (prod): N/A — disabled in production
@@ -111,3 +114,4 @@ Magic link works right now without any extra config.
 | 2026-06-11 | Session 7: Migration 008 (confirm_slot). My Slots toggle + host Gmail invite + mentor field. 36/36 tests. |
 | 2026-06-11 | Session 8: Phase 3 (attendance + cockpit) — migrations 009+010, slot detail view, cockpit with QR tokens, check-in page, feedback drawer, profile feedback section, dev-login. 58/58 tests. |
 | 2026-06-11 | Session 9: Phase 4+5+6 — outbox/notifications (migration 011, Edge Function), share page, knowledge feed, doubts Q&A (migrations 012+013), anonymous reviews (014), analytics views (015), mentor dashboard, admin stats + Room-Now board. 58/58 tests. Product complete. |
+| 2026-06-11 | Session 10: Email→role mapping. Migration 016 (BEFORE INSERT trigger). lib/email-role.ts. Onboarding form locks year for b25/b26 emails. Dev seed + dev-login updated to b25/b26 addresses. 63/63 tests. |
