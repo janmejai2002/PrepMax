@@ -8,13 +8,16 @@ function isPublicPath(pathname: string) {
 }
 
 function isEmailAllowed(email: string): boolean {
-  const domain = 'astra.xlri.ac.in'
   const exceptions = (process.env.ALLOWED_EXCEPTION_EMAILS ?? '')
     .split(',')
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean)
   const lower = email.toLowerCase()
-  return lower.endsWith(`@${domain}`) || exceptions.includes(lower)
+  return (
+    lower.endsWith('@astra.xlri.ac.in') ||
+    lower.endsWith('@xlri.ac.in') ||
+    exceptions.includes(lower)
+  )
 }
 
 export async function proxy(request: NextRequest) {
