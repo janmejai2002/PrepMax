@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Loader2, Check, X, Plus } from 'lucide-react'
+import { Loader2, Check, X, Plus, CalendarDays } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
@@ -25,6 +25,7 @@ import type {
   RoomOption,
   SlotType,
 } from '@/lib/types'
+import { RoomScheduleSheet } from './room-schedule-sheet'
 
 interface HostSlotSheetProps {
   open: boolean
@@ -84,6 +85,7 @@ export function HostSlotSheet({
   const [coJudges, setCoJudges] = useState<Set<string>>(new Set())
   const [judgeFilter, setJudgeFilter] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [scheduleOpen, setScheduleOpen] = useState(false)
 
   const liveRooms = useMemo(() => rooms.filter((r) => r.status !== 'offline'), [rooms])
   const roomLabel = (r: RoomOption) =>
@@ -189,7 +191,20 @@ export function HostSlotSheet({
 
   const isGD = type === 'GD'
 
+  const selectedRoom = liveRooms.find((r) => r.id === roomId)
+
   return (
+    <>
+    {selectedRoom && (
+      <RoomScheduleSheet
+        open={scheduleOpen}
+        onOpenChange={setScheduleOpen}
+        roomId={roomId}
+        roomName={selectedRoom.name}
+        durationMin={durationMin}
+        onSelect={(startDate) => setStartAt(toLocalInput(startDate))}
+      />
+    )}
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton
@@ -289,7 +304,19 @@ export function HostSlotSheet({
 
             {/* room */}
             <div className="space-y-1.5">
-              <Label htmlFor="hs-room">Room</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="hs-room">Room</Label>
+                {roomId && (
+                  <button
+                    type="button"
+                    onClick={() => setScheduleOpen(true)}
+                    className="flex items-center gap-1 text-[11px] text-gd hover:text-gd/80 transition-colors"
+                  >
+                    <CalendarDays className="h-3 w-3" />
+                    See availability
+                  </button>
+                )}
+              </div>
               {liveRooms.length === 0 ? (
                 <p className="rounded-lg bg-muted/60 px-3 py-2.5 text-xs text-muted-foreground">
                   No live rooms right now. Ask CRISP/SAC to bring a room online.
@@ -440,5 +467,6 @@ export function HostSlotSheet({
         </form>
       </DialogContent>
     </Dialog>
+    </>
   )
 }
