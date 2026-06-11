@@ -5,7 +5,7 @@
 ---
 
 ## Current Phase
-**Phase 2 — Crown Jewel — IN PROGRESS. All seat RPCs done (join/leave/cancel/edit) + slots feed UI + hosting form. UI wiring for leave/cancel/edit + /stress remaining.**
+**Phase 2 — Crown Jewel — IN PROGRESS. All seat RPCs done (join/leave/cancel/edit) + slots feed UI + hosting form + UI wiring + /stress PASSED. Remaining: proxy.ts rename + nice-to-haves.**
 
 ## Status
 
@@ -48,6 +48,7 @@
 | Stub pages | ✅ Done | /knowledge, /doubts (coming-soon), /profile (real data + sign out) |
 | Demo slots | ✅ Done | 7 seeded slots (4 GD + 3 PI), varied fill states, clean IST evening times |
 | Supabase Site URL | ✅ Done | Fixed by Janmejai — Vercel magic links no longer redirect to localhost |
+| /stress load test | ✅ Done | `scripts/stress-test.ts`: 100 concurrent `join_slot` → exactly 6 confirmed, 94 waitlisted, 0 oversell, 0 duplicates, positions contiguous, slot→full. Race wall-time ~1s. All 10 assertions pass. Caches JWTs to `.tmp-stress-sessions.json` (gitignored) to dodge auth rate limit on reruns |
 
 ## Test accounts
 | Email | Year | Flags | Purpose |
@@ -69,11 +70,9 @@ Magic link works right now without any extra config.
 - **Seed counter display bug**: `seed.ts` logs "0 fake profiles seeded" due to a closure quirk in parallel batches, but all 202 rows are confirmed in the DB. Non-blocking.
 
 ## Exact Next Step for Claude — Phase 2 (remaining)
-All seat-management RPCs done (join/leave/cancel/edit, 26/26 tests) + hosting form shipped & verified. Remaining:
-1. Wire UI actions calling the ready RPCs: junior "Leave my spot" (`leave_slot`); host "Cancel slot" + "Edit slot" (`cancel_slot`/`edit_slot`, pass `version` for optimistic lock). Host-only controls show when `slot.host_id === me.id` or admin.
-2. Run `/stress` load test: 100 concurrent joins on a 6-seat slot → exactly 6 confirmed, 94 waitlisted in order, 0 oversell.
-3. Rename `middleware.ts` → `proxy.ts` (Next.js 16 convention) if it causes warnings in prod.
-4. Nice-to-have: slot detail view, "My slots" section/tab showing joined + waitlisted slots.
+All seat-management RPCs done (join/leave/cancel/edit, 26/26 tests) + hosting form + UI wiring (leave/cancel/edit) shipped & verified + `/stress` load test PASSED (zero oversell under 100 concurrent joins). Remaining:
+1. Rename `middleware.ts` → `proxy.ts` (Next.js 16 convention) if it causes warnings in prod.
+2. Nice-to-have: slot detail view, "My slots" section/tab showing joined + waitlisted slots.
 
 ## Session Log
 | Date | What happened |
@@ -87,3 +86,4 @@ All seat-management RPCs done (join/leave/cancel/edit, 26/26 tests) + hosting fo
 | 2026-06-11 | Session 5: Migration 006 — `leave_slot` RPC (atomic seat release + waitlist auto-promotion + contiguous position re-sequencing) and `join_slot` re-join-after-leave support (upsert reactivates cancelled rows). 8 new Vitest tests; suite 17/17 green. UI "Leave" action still to wire. |
 | 2026-06-11 | Session 5 (cont.): Migration 007 — `cancel_slot` (host/admin cancels whole slot, all enrolments released, version bump) + `edit_slot` (optimistic version lock; capacity-raise auto-promotes waitlist; capacity-below-enrolled rejected). 9 new Vitest tests; suite 26/26 green. All seat RPCs complete. Next: hosting form + wiring leave/cancel/edit into the UI. |
 | 2026-06-11 | Session 5 (cont.): **Hosting form shipped** — "Host a slot" FAB + mobile sheet (type/topic/company/tags/room/time/seats/format/description/co-judges). Inserts slot + slot_judges, prepends to feed. Verified end-to-end at 390px via Playwright (authed with new `scripts/dev-session.ts` helper); slot + co-judge confirmed in DB then cleaned up. Recorded UI-registry priority preference to memory (shadcn → Origin UI → Shadcnblocks → Magic UI → Charts; install via `npx shadcn add`). |
+| 2026-06-11 | Session 6: **`/stress` load test PASSED** — 100 concurrent `join_slot` calls on a 6-seat slot → exactly 6 confirmed, 94 waitlisted, 0 oversell, 0 duplicates, contiguous positions, slot→full (race ~1s). Iron Rule #1 holds under load. Fixed latent bug in `scripts/stress-test.ts`: the burst+spacing+JWT-cache auth design described in the header comments was never wired in, so sign-ins tripped Supabase's auth rate limit; now caches JWTs to `.tmp-stress-sessions.json` (gitignored). |

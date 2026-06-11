@@ -54,3 +54,6 @@ next-env.d.ts
 
 # dev-session helper output (minted auth cookies — never commit)
 .tmp-session.json
+
+# stress-test cached JWTs — never commit
+.tmp-stress-sessions.json
