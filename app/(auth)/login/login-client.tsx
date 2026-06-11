@@ -9,14 +9,16 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 
-const IS_DEV = process.env.NODE_ENV === 'development'
-
 const ERROR_MESSAGES: Record<string, string> = {
-  domain: 'Only @astra.xlri.ac.in email addresses are allowed.',
+  domain: 'Only @astra.xlri.ac.in and @xlri.ac.in email addresses are allowed.',
   auth: 'Authentication failed. Please try again.',
 }
 
-export default function LoginClient() {
+interface Props {
+  allowDevLogin?: boolean
+}
+
+export default function LoginClient({ allowDevLogin }: Props) {
   const params = useSearchParams()
   const error = params.get('error')
 
@@ -38,16 +40,18 @@ export default function LoginClient() {
     e.preventDefault()
     setMagicError('')
 
-    const domain = 'astra.xlri.ac.in'
     const exceptions = (process.env.NEXT_PUBLIC_ALLOWED_EXCEPTION_EMAILS ?? '')
       .split(',')
       .map((e) => e.trim().toLowerCase())
       .filter(Boolean)
     const lower = email.toLowerCase()
-    const allowed = lower.endsWith(`@${domain}`) || exceptions.includes(lower)
+    const allowed =
+      lower.endsWith('@astra.xlri.ac.in') ||
+      lower.endsWith('@xlri.ac.in') ||
+      exceptions.includes(lower)
 
     if (!allowed) {
-      setMagicError('Only @astra.xlri.ac.in addresses are allowed.')
+      setMagicError('Only @astra.xlri.ac.in or @xlri.ac.in addresses are allowed.')
       return
     }
 
@@ -121,7 +125,7 @@ export default function LoginClient() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@astra.xlri.ac.in"
+                  placeholder="you@astra.xlri.ac.in or crisp@xlri.ac.in"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -143,7 +147,7 @@ export default function LoginClient() {
           )}
         </div>
 
-        {IS_DEV && (
+        {allowDevLogin && (
           <p className="text-center text-xs text-muted-foreground/60 mt-4">
             <Link href="/dev-login" className="underline hover:text-muted-foreground">
               Dev test login →
