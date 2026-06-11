@@ -5,7 +5,7 @@ import { BottomNav } from '@/components/nav/bottom-nav'
 import { RoomNowClient } from './room-now-client'
 import {
   BarChart3, CheckCircle2, XCircle, Users, Radio,
-  Activity, Building2
+  Activity, Building2, Users2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -96,7 +96,7 @@ export default async function AdminStatsPage() {
         </div>
 
         {/* Admin nav tabs */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Link href="/admin/rooms"
             className="flex-1 rounded-xl border bg-muted px-3 py-2 text-center text-xs font-medium text-muted-foreground hover:bg-card transition-colors">
             <Building2 className="h-3.5 w-3.5 inline mr-1" />
@@ -110,6 +110,11 @@ export default async function AdminStatsPage() {
             className="flex-1 rounded-xl border bg-muted px-3 py-2 text-center text-xs font-medium text-muted-foreground hover:bg-card transition-colors">
             <Users className="h-3.5 w-3.5 inline mr-1" />
             Juniors
+          </Link>
+          <Link href="/admin/roles"
+            className="flex-1 rounded-xl border bg-muted px-3 py-2 text-center text-xs font-medium text-muted-foreground hover:bg-card transition-colors">
+            <Users2 className="h-3.5 w-3.5 inline mr-1" />
+            Roles
           </Link>
         </div>
 

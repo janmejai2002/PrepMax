@@ -55,8 +55,9 @@ export function SlotsFeed({
   const [view, setView] = useState<View>('discover')
   const [hostOpen, setHostOpen] = useState(false)
 
-  const canHost =
-    capabilities.canHostGd || capabilities.canHostPi || capabilities.canManageRooms
+  // canManageRooms is for the /admin/rooms page, not for creating slots.
+  // Committee accounts with canManageRooms should NOT see the hosting form here.
+  const canHost = capabilities.canHostGd || capabilities.canHostPi
 
   // Realtime: seat counts + status changes broadcast to every browsing phone
   useEffect(() => {

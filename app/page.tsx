@@ -20,9 +20,6 @@ export default async function HomePage() {
 
   if (!profile) redirect('/onboarding')
 
-  // Committee accounts (@xlri.ac.in) see only the knowledge/post view
-  if (profile.is_committee || profile.is_crisp_admin || profile.is_sac) redirect('/knowledge')
-
   const capabilities: HostCapabilities = {
     canHostGd: !!profile.can_host_gd,
     canHostPi: !!profile.can_host_pi,
@@ -31,11 +28,12 @@ export default async function HomePage() {
   const canHost =
     capabilities.canHostGd || capabilities.canHostPi || capabilities.canManageRooms
 
-  // Hosting-only data: rooms to pick from + eligible co-judges. Loaded only when
-  // the user can actually post a slot, so juniors pay no extra query cost.
+  // Hosting-only data: rooms + co-judges. Only loaded when the user can actually create slots.
+  // canManageRooms is NOT included here — committee accounts manage rooms via /admin/rooms, not via hosting form.
+  const canCreateSlot = capabilities.canHostGd || capabilities.canHostPi
   let rooms: RoomOption[] = []
   let judges: JudgeOption[] = []
-  if (canHost) {
+  if (canCreateSlot) {
     const [roomsRes, judgesRes] = await Promise.all([
       supabase.from('room_status').select('id, name, location, status').order('name'),
       supabase.from('host_directory').select('id, name').order('name'),
@@ -89,7 +87,8 @@ export default async function HomePage() {
       <BottomNav
         isAdmin={!!(profile.is_crisp_admin || profile.is_sac)}
         isMentor={!!profile.is_mentor}
-        isSenior={!!(profile.can_host_gd || profile.can_host_pi || profile.is_committee || profile.is_crisp_admin || profile.is_sac)}
+        isSenior={!!(profile.can_host_gd || profile.can_host_pi)}
+        isCommittee={!!(profile.is_committee || profile.is_crisp_admin || profile.is_sac)}
       />
     </div>
   )

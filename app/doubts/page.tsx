@@ -14,7 +14,7 @@ export default async function DoubtsPage() {
   const [{ data: profile }, { data: doubts }] = await Promise.all([
     supabase
       .from('profiles')
-      .select('is_committee, is_crisp_admin, is_sac')
+      .select('is_committee, is_crisp_admin, is_sac, can_host_gd, can_host_pi')
       .eq('id', user.id)
       .single(),
     supabase
@@ -24,15 +24,14 @@ export default async function DoubtsPage() {
       .limit(50),
   ])
 
-  // Committee accounts see only the knowledge/post view
-  if (profile?.is_committee || profile?.is_crisp_admin || profile?.is_sac) redirect('/knowledge')
-
   const isAdmin = !!(profile?.is_crisp_admin || profile?.is_sac)
+  const isCommittee = !!(profile?.is_committee || profile?.is_crisp_admin || profile?.is_sac)
+  const isSenior = !!(profile?.can_host_gd || profile?.can_host_pi)
 
   return (
     <div className="min-h-screen bg-background pb-nav">
       <DoubtsFeedClient initialDoubts={(doubts ?? []) as Doubt[]} myUserId={user.id} />
-      <BottomNav isAdmin={isAdmin} isSenior={isAdmin} />
+      <BottomNav isAdmin={isAdmin} isSenior={isSenior} isCommittee={isCommittee} />
     </div>
   )
 }

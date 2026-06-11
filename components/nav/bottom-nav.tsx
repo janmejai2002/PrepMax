@@ -32,29 +32,32 @@ export function BottomNav({
   let tabs: Tab[]
 
   if (isCommittee) {
-    // Committee accounts (CRISP, SAC): Knowledge + optional Admin + Profile only.
-    // No Slots, Requests, or Doubts tabs.
+    // @xlri.ac.in shared accounts: Feed (read-only) + Knowledge + Doubts + optional Admin + Profile.
     tabs = [
+      { href: '/', label: 'Feed', icon: CalendarRange },
       { href: '/knowledge', label: 'Knowledge', icon: BookOpen },
+      { href: '/doubts', label: 'Doubts', icon: MessageCircleQuestion },
       ...(isAdmin ? [{ href: '/admin/stats', label: 'Admin', icon: ShieldCheck } as Tab] : []),
       { href: '/profile', label: 'Profile', icon: CircleUser },
     ]
   } else {
     // 5-tab base: Slots · Requests · Knowledge · Doubts · Profile
-    // Role extras (Admin/Mentor) replace Profile when active to stay at 5 tabs max
-    const baseTabs: Tab[] = [
+    // Role extras (Admin/Mentor) insert before Profile, keeping Profile always visible.
+    const coreTabs: Tab[] = [
       { href: '/', label: 'Slots', icon: CalendarRange },
       { href: requestsHref, label: 'Requests', icon: ClipboardList },
       { href: '/knowledge', label: 'Knowledge', icon: BookOpen },
       { href: '/doubts', label: 'Doubts', icon: MessageCircleQuestion },
-      { href: '/profile', label: 'Profile', icon: CircleUser },
     ]
-    tabs = [...baseTabs]
-    if (isMentor && !isAdmin) {
-      tabs = [...baseTabs.slice(0, 4), { href: '/mentor', label: 'Mentees', icon: UserCheck }]
-    }
+    const profileTab: Tab = { href: '/profile', label: 'Profile', icon: CircleUser }
     if (isAdmin) {
-      tabs = [...baseTabs.slice(0, 4), { href: '/admin/stats', label: 'Admin', icon: ShieldCheck }]
+      // Admin supersedes Mentor — Admin tab + Profile = 6 tabs
+      tabs = [...coreTabs, { href: '/admin/stats', label: 'Admin', icon: ShieldCheck }, profileTab]
+    } else if (isMentor) {
+      // Mentor: Mentees tab + Profile = 6 tabs, full senior nav preserved
+      tabs = [...coreTabs, { href: '/mentor', label: 'Mentees', icon: UserCheck }, profileTab]
+    } else {
+      tabs = [...coreTabs, profileTab]
     }
   }
 
