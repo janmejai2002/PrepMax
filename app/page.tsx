@@ -14,7 +14,7 @@ export default async function HomePage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('name, whatsapp, year, can_host_gd, can_host_pi, is_crisp_admin, is_sac')
+    .select('name, whatsapp, year, can_host_gd, can_host_pi, is_crisp_admin, is_sac, is_mentor')
     .eq('id', user.id)
     .single()
 
@@ -83,7 +83,7 @@ export default async function HomePage() {
         rooms={rooms}
         judges={judges}
       />
-      <BottomNav isAdmin={profile.is_crisp_admin || profile.is_sac} />
+      <BottomNav isAdmin={!!(profile.is_crisp_admin || profile.is_sac)} isMentor={!!profile.is_mentor} />
     </div>
   )
 }

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import {
   Clock, MapPin, MessageCircle, Loader2, Send, Users,
-  LogOut, Pencil, Trash2, MoreVertical, Play,
+  LogOut, Pencil, Trash2, MoreVertical, Play, Star,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
@@ -22,6 +22,61 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { EditSlotSheet } from '@/components/slots/edit-slot-sheet'
 import type { SlotDetail, Me, ConfirmSlotResult, RosterEntry } from '@/lib/types'
+
+function ReviewBox({ slotId }: { slotId: string }) {
+  const [rating, setRating] = useState<number>(0)
+  const [text, setText] = useState('')
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'done' | 'already'>('idle')
+  const supabase = createClient()
+
+  async function submit() {
+    if (rating === 0) return
+    setStatus('submitting')
+    const { data } = await supabase.rpc('submit_review', {
+      p_slot_id: slotId,
+      p_rating: rating,
+      p_text: text.trim() || null,
+    })
+    if (data?.status === 'already_reviewed') { setStatus('already'); return }
+    setStatus('done')
+  }
+
+  if (status === 'done' || status === 'already') {
+    return (
+      <div className="rounded-2xl border bg-card p-4 text-center text-sm text-muted-foreground">
+        {status === 'done' ? 'Review submitted — thanks!' : 'You already reviewed this session.'}
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-2xl border bg-card p-4 space-y-3">
+      <p className="text-sm font-semibold">Leave a review</p>
+      <div className="flex gap-1">
+        {[1,2,3,4,5].map(n => (
+          <button key={n} onClick={() => setRating(n)} className="p-0.5">
+            <Star className={cn('h-6 w-6 transition-colors', n <= rating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30')} />
+          </button>
+        ))}
+      </div>
+      <textarea
+        value={text}
+        onChange={e => setText(e.target.value)}
+        placeholder="Optional note (anonymous)"
+        rows={2}
+        maxLength={1000}
+        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+      />
+      <button
+        onClick={submit}
+        disabled={rating === 0 || status === 'submitting'}
+        className="flex h-10 w-full items-center justify-center rounded-full bg-foreground text-background text-sm font-semibold disabled:opacity-50"
+      >
+        {status === 'submitting' ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit review'}
+      </button>
+    </div>
+  )
+}
 
 function durationMins(start: string, end: string) {
   return Math.round((new Date(end).getTime() - new Date(start).getTime()) / 60_000)
@@ -447,6 +502,11 @@ export function SlotDetailClient({ slot: initialSlot, me }: { slot: SlotDetail; 
         <p className="text-center text-xs text-muted-foreground">
           Use the cockpit to manage attendance and give feedback
         </p>
+      )}
+
+      {/* Review section — shown to attended participants after slot completes */}
+      {isCompleted && enrollment?.status === 'attended' && (
+        <ReviewBox slotId={slot.id} />
       )}
 
       <EditSlotSheet

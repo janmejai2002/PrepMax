@@ -8,6 +8,7 @@ import {
   MessageCircleQuestion,
   CircleUser,
   ShieldCheck,
+  UserCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -18,11 +19,21 @@ const TABS = [
   { href: '/profile', label: 'Profile', icon: CircleUser },
 ]
 
-export function BottomNav({ isAdmin = false }: { isAdmin?: boolean }) {
+export function BottomNav({
+  isAdmin = false,
+  isMentor = false,
+}: {
+  isAdmin?: boolean
+  isMentor?: boolean
+}) {
   const pathname = usePathname()
-  const tabs = isAdmin
-    ? [...TABS, { href: '/admin/rooms', label: 'Admin', icon: ShieldCheck }]
-    : TABS
+  let tabs = [...TABS]
+  if (isMentor && !isAdmin) {
+    tabs = [...TABS, { href: '/mentor', label: 'Mentees', icon: UserCheck }]
+  }
+  if (isAdmin) {
+    tabs = [...TABS, { href: '/admin/stats', label: 'Admin', icon: ShieldCheck }]
+  }
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border/60 bg-background/80 backdrop-blur-xl pb-safe">
