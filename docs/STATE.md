@@ -27,7 +27,7 @@
 | Seed data | ✅ Done | 202 profiles (2 test + 200 Faker) · 5 rooms |
 | /login page | ✅ Done | Google OAuth button + magic-link fallback |
 | /auth/callback | ✅ Done | Domain check (astra.xlri.ac.in) + exception list + onboarding redirect |
-| Middleware | ✅ Done | Auth guard on all routes; domain enforcement |
+| Proxy (was Middleware) | ✅ Done | `proxy.ts` (Next.js 16 convention); auth guard on all routes; domain enforcement |
 | /onboarding | ✅ Done | Name/phone/whatsapp/year/batch/section/roll → upsert → home |
 | /admin/rooms | ✅ Done | CRISP-admin-only; list rooms; toggle is_live; add room |
 | Vercel deploy | ✅ Done | https://prep-max-alpha.vercel.app |
@@ -66,13 +66,12 @@
 Magic link works right now without any extra config.
 
 ## Known Issues / Logged Bugs
-- **Middleware deprecation warning** at build time: `"middleware" file convention is deprecated, use "proxy" instead` — this is a Next.js 16 cosmetic warning only; routing works correctly. Will rename to `proxy.ts` in Phase 2 if it becomes a blocker.
+- ~~**Middleware deprecation warning**~~ — RESOLVED. Renamed `middleware.ts` → `proxy.ts` and the exported function `middleware` → `proxy` (Next.js 16 convention). Build is clean; route table shows `ƒ Proxy (Middleware)`. Runtime is nodejs-only (no edge), which is fine — we use no edge features.
 - **Seed counter display bug**: `seed.ts` logs "0 fake profiles seeded" due to a closure quirk in parallel batches, but all 202 rows are confirmed in the DB. Non-blocking.
 
 ## Exact Next Step for Claude — Phase 2 (remaining)
-All seat-management RPCs done (join/leave/cancel/edit, 26/26 tests) + hosting form + UI wiring (leave/cancel/edit) shipped & verified + `/stress` load test PASSED (zero oversell under 100 concurrent joins). Remaining:
-1. Rename `middleware.ts` → `proxy.ts` (Next.js 16 convention) if it causes warnings in prod.
-2. Nice-to-have: slot detail view, "My slots" section/tab showing joined + waitlisted slots.
+All seat-management RPCs done (join/leave/cancel/edit, 26/26 tests) + hosting form + UI wiring (leave/cancel/edit) shipped & verified + `/stress` load test PASSED (zero oversell under 100 concurrent joins) + `proxy.ts` rename done (build clean). Remaining:
+1. Nice-to-have: slot detail view, "My slots" section/tab showing joined + waitlisted slots.
 
 ## Session Log
 | Date | What happened |

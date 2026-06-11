@@ -17,7 +17,7 @@ function isEmailAllowed(email: string): boolean {
   return lower.endsWith(`@${domain}`) || exceptions.includes(lower)
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request })
 
   const supabase = createServerClient(
