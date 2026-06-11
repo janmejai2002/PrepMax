@@ -5,7 +5,7 @@
 ---
 
 ## Current Phase
-**Phase 6 — Complete + Role/View Reconciled + Scheduling Clash Detection + Mentee Monitor. All phases 1-6 shipped. 153/153 tests green.**
+**Phase 6 — Complete + is_crisp consolidation done. 4-role model: JUNIOR / SENIOR / SENIOR+CRISP / SAC. 152/152 tests green.**
 
 ## Status
 
@@ -55,7 +55,7 @@
 | dev seed users | ✅ Done | 4 test accounts via `npx tsx scripts/seed-dev-users.ts` |
 | Vercel deploy | ✅ Done | https://prep-max-alpha.vercel.app |
 | GitHub repo | ✅ Done | https://github.com/janmejai2002/PrepMax |
-| Tests | ✅ Done | 153/153 passing |
+| Tests | ✅ Done | 152/152 passing |
 | lib/email-role.ts | ✅ Done | inferYearFromEmail + isCommitteeEmail + isSacEmail + isCrispEmail |
 | Committee gating | ✅ Done | @xlri.ac.in accounts redirected from /, /requests, /my-requests, /doubts → /knowledge |
 | SAC notify button | ✅ Done | "Notify CRISP" button on /admin/rooms (SAC-only); server action inserts outbox events for all is_committee members |
@@ -78,9 +78,9 @@ Run `npx tsx scripts/seed-dev-users.ts` to create these accounts (idempotent).
 | Email | Type | Password |
 |---|---|---|
 | `b26001@astra.xlri.ac.in` | Junior (first-year, no flags) | `PrepMax@dev1` |
-| `b25001@astra.xlri.ac.in` | Senior (can host GD+PI, is_mentor) | `PrepMax@dev1` |
-| `crisp@xlri.ac.in` | CRISP committee shared login (is_committee, year=null) | `PrepMax@dev1` |
-| `sacdelhi@xlri.ac.in` | SAC shared login (is_committee + is_sac, year=null) | `PrepMax@dev1` |
+| `b25001@astra.xlri.ac.in` | Senior (can host GD+PI) | `PrepMax@dev1` |
+| `crisp@xlri.ac.in` | CRISP shared login (is_crisp=true, year=null) | `PrepMax@dev1` |
+| `sacdelhi@xlri.ac.in` | SAC shared login (is_sac=true, year=null) | `PrepMax@dev1` |
 
 Dev login URL (local): http://localhost:3000/dev-login
 Dev login URL (prod): https://prep-max-alpha.vercel.app/dev-login (ALLOW_DEV_LOGIN=true set in Vercel)
@@ -118,9 +118,10 @@ Magic link works right now without any extra config.
 ## Exact Next Step (open this at the start of the next session)
 
 1. **Enable email notifications** (user action): Set `RESEND_API_KEY` + `APP_URL` in Supabase Edge Function secrets, then schedule `drain-notifications` cron every 60s — see "One action still needed" above.
-2. **Phone-based Playwright E2E** — run `/ship-check` at 390×844 for each role (junior, senior, crisp-member, sac). Fix any regressions.
-3. **Phase 7 Hardening** — RLS audit, Lighthouse mobile pass, Sentry stub, RUNBOOK.md.
-4. **Scheduling clash audit report** — write the written report (all clash scenarios enumerated, each marked COVERED/NOT-COVERED). Partially done: join_slot + edit_slot + create_slot covered. Remaining: leave_slot waitlist-promotion edge case, confirm_match senior scheduling overlap.
+2. **GD Live Session (Cockpit) Revamp** — harden /cockpit flow end-to-end, improve UX, add dev-only dummy feedback seed.
+3. **Clash audit continuation** — leave_slot waitlist-promotion edge case + confirm_match senior scheduling overlap check.
+4. **Phone-based Playwright E2E** — run `/ship-check` at 390×844 for each role (junior, senior, crisp, sac). Fix any regressions.
+5. **Phase 7 Hardening** — RLS audit, Lighthouse mobile pass, Sentry stub, RUNBOOK.md.
 
 ## Possible Future Enhancements (V2)
 - No-show penalty: 24h booking cooldown after 2 no-shows in 7 days (config-flagged — data path already built)
@@ -152,3 +153,4 @@ Magic link works right now without any extra config.
 | 2026-06-11 | Session 17: User feedback fixes. BLOCKING: @xlri.ac.in login blocked by domain check in login-client.tsx + auth/callback — fixed both to allow @xlri.ac.in. Dev-login link now shows on /login when ALLOW_DEV_LOGIN=true. Committee feed: removed redirect-to-knowledge from / and /doubts so committee (and senior+committee hybrids like b25349) can browse Slots feed read-only + Doubts. Committee BottomNav: Feed|Knowledge|Doubts|[Admin]|Profile. BottomNav: Mentor/Admin now adds as 6th tab (Profile always kept). Role Management Portal: /admin/roles with 7-flag toggles per user (CRISP-admin/SAC gated). Admin nav: Roles tab added to rooms+stats pages. Perf: loading.tsx for /admin/rooms and /admin/roles. canCreateSlot separated from canManageRooms. Push notifications plan delivered (item 6). 145/145 tests. |
 | 2026-06-12 | Session 18: Email path complete. Migration 022: slots.reminder_sent_at + insert_slot_reminders() SQL function + express_interest/confirm_match updated to write outbox. drain-notifications v2: templates for interest_expressed, match_confirmed (junior+senior), slot_reminder_30m; calls insert_slot_reminders() at top of each run. Perf: loading.tsx added to cockpit/myqr/s routes; home page collapsed profile+feed queries into single parallel Promise.all (−1 serial hop); cockpit queries parallelised. 153/153 tests. User must add RESEND_API_KEY + schedule drain cron to activate emails. BUGFIX: proxy.ts (Next.js 16 middleware layer) was missing @xlri.ac.in in isEmailAllowed — committee accounts were being signed out on every request. Fixed + deployed. |
 | 2026-06-12 | Session 19: Role/view reconciliation + scheduling clash detection + mentee monitor. Migration 023: join_slot v4 (seniors blocked + junior time-conflict check), edit_slot v2 (room double-booking on time-change), create_slot RPC (host-overlap + room-overlap checks, co-judges bundled), get_all_juniors/assign_mentee/unassign_mentee RPCs. BottomNav: SAC→single Rooms tab, CRISP member→Rooms+Monitor tabs. SAC redirected from / to /admin/rooms. Senior join button hidden (canJoin prop thread through SlotsFeed→SlotCard + me.isSenior in slot-detail-client). /admin/rooms now accessible to is_crisp_member. New /crisp-monitor page: mentee list with search/filter, assign/unassign buttons. host-slot-sheet.tsx migrated from direct INSERT to create_slot RPC. 153/153 tests. |
+| 2026-06-12 | Session 20: is_crisp consolidation. Migration 024: collapsed is_mentor+is_crisp_member+is_crisp_admin+is_committee → single is_crisp boolean. 4-role model: JUNIOR (b26), SENIOR (b25), SENIOR+CRISP (is_crisp), SAC (is_sac). Migration 025: fixed join_slot v6 (v5 had NULL position + wrong 'waitlisted' status) + fixed express_interest (referenced dropped columns). Validation fixes: knowledge post (title≥3/body≥10) and doubts (min 5 chars) now validate client-side with friendly errors. All 20 app pages, BottomNav, scripts, all 13 test files updated. committee-gating tests rewritten for new model. 152/152 tests. |
