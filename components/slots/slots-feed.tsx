@@ -4,8 +4,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { Search, Sparkles, Plus } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import dynamic from 'next/dynamic'
 import { SlotCard } from './slot-card'
-import { HostSlotSheet } from './host-slot-sheet'
+
+const HostSlotSheet = dynamic(() =>
+  import('./host-slot-sheet').then((m) => ({ default: m.HostSlotSheet })),
+  { ssr: false }
+)
 import type {
   FeedSlot,
   HostCapabilities,

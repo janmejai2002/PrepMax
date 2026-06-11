@@ -1,10 +1,11 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { BottomNav } from '@/components/nav/bottom-nav'
 import { AppHeader, profileToNavRole } from '@/components/nav/app-header'
 import { RolesClient } from './roles-client'
-import { listAllProfiles } from './actions'
+import type { ProfileRow } from './actions'
 import { Users2, Building2, BarChart3, ShieldCheck } from 'lucide-react'
 
 export default async function RolesPage() {
@@ -12,15 +13,19 @@ export default async function RolesPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('name, is_crisp, is_sac')
-    .eq('id', user.id)
-    .single()
+  const service = createServiceClient()
+  const [{ data: profile }, { data: rawProfiles }] = await Promise.all([
+    supabase.from('profiles').select('name, is_crisp, is_sac').eq('id', user.id).single(),
+    service.from('profiles')
+      .select('id, name, email, year, batch, can_host_gd, can_host_pi, is_crisp, is_sac')
+      .order('year', { ascending: false, nullsFirst: false })
+      .order('name')
+      .limit(500),
+  ])
 
   if (!profile?.is_crisp && !profile?.is_sac) redirect('/')
 
-  const profiles = await listAllProfiles()
+  const profiles = (rawProfiles ?? []) as ProfileRow[]
 
   return (
     <div className="min-h-screen bg-background pb-nav">

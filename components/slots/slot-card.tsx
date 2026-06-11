@@ -36,7 +36,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { EditSlotSheet } from './edit-slot-sheet'
+import dynamic from 'next/dynamic'
+const EditSlotSheet = dynamic(() =>
+  import('./edit-slot-sheet').then((m) => ({ default: m.EditSlotSheet })),
+  { ssr: false }
+)
 import type { FeedSlot, Me } from '@/lib/types'
 
 interface SlotCardProps {

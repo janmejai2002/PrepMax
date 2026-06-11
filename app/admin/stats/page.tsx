@@ -63,18 +63,13 @@ export default async function AdminStatsPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('name, is_crisp, is_sac')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.is_crisp && !profile?.is_sac) redirect('/')
-
-  const [{ data: statsData }, { data: roomsData }] = await Promise.all([
+  const [{ data: profile }, { data: statsData }, { data: roomsData }] = await Promise.all([
+    supabase.from('profiles').select('name, is_crisp, is_sac').eq('id', user.id).single(),
     supabase.from('daily_stats').select('*').single(),
     supabase.from('room_now').select('*').order('room_name'),
   ])
+
+  if (!profile?.is_crisp && !profile?.is_sac) redirect('/')
 
   const stats = statsData as DailyStats | null
   const rooms: RoomNowRow[] = (roomsData ?? []) as RoomNowRow[]

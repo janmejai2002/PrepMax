@@ -46,28 +46,18 @@ export default async function MentorPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('is_crisp, is_sac, name')
-    .eq('id', user.id)
-    .single()
+  // Fetch profile + full juniors list in parallel; filter by mentor_id in JS for
+  // non-SAC CRISP members (avoids a second serial round trip).
+  const [{ data: profile }, { data: allJuniors }] = await Promise.all([
+    supabase.from('profiles').select('is_crisp, is_sac, name').eq('id', user.id).single(),
+    supabase.from('junior_profile_360').select('*').order('name').limit(100),
+  ])
 
-  if (!profile?.is_crisp && !profile?.is_sac) {
-    redirect('/')
-  }
+  if (!profile?.is_crisp && !profile?.is_sac) redirect('/')
 
-  // CRISP+SAC admins see all juniors; plain CRISP members see only their assigned juniors
-  let juniorsQuery = supabase
-    .from('junior_profile_360')
-    .select('*')
-    .order('name')
-
-  if (!profile.is_sac) {
-    juniorsQuery = juniorsQuery.eq('mentor_id', user.id)
-  }
-
-  const { data: juniors } = await juniorsQuery.limit(100)
-  const rows: Junior360Row[] = (juniors ?? []) as Junior360Row[]
+  const rows: Junior360Row[] = ((allJuniors ?? []) as Junior360Row[]).filter(
+    (jr) => profile.is_sac || jr.mentor_id === user.id
+  )
 
   const isAdmin = !!(profile.is_crisp || profile.is_sac)
 

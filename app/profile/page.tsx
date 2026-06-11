@@ -22,29 +22,20 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile) redirect('/onboarding')
-
-  // Fire profile-dependent queries in parallel
-  const [{ data: feedbackRows }, mentorRes] = await Promise.all([
+  const [{ data: profile }, { data: feedbackRows }] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single(),
     supabase
       .from('my_received_feedback')
       .select('*')
       .order('slot_start_at', { ascending: false })
       .limit(20),
-    profile.mentor_id
-      ? supabase
-          .from('mentor_directory')
-          .select('name')
-          .eq('id', profile.mentor_id)
-          .single()
-      : Promise.resolve({ data: null }),
   ])
+
+  if (!profile) redirect('/onboarding')
+
+  const mentorRes = profile.mentor_id
+    ? await supabase.from('mentor_directory').select('name').eq('id', profile.mentor_id).single()
+    : { data: null }
   const mentorName: string | null = mentorRes.data?.name ?? null
 
   const feedback: ReceivedFeedback[] = (feedbackRows ?? []) as ReceivedFeedback[]

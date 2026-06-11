@@ -13,10 +13,10 @@ export default async function HomePage() {
 
   if (!user) redirect('/login')
 
-  // Run profile + feed queries in parallel — profile is needed only to derive
-  // capabilities; feed data only needs user.id which is already known.
+  // Fire all queries in a single round trip — rooms/judges are lightweight and
+  // always fetched so seniors don't pay a second serial hop.
   const nowIso = new Date().toISOString()
-  const [profileRes, slotsRes, hostsRes, enrollRes] = await Promise.all([
+  const [profileRes, slotsRes, hostsRes, enrollRes, roomsRes, judgesRes] = await Promise.all([
     supabase
       .from('profiles')
       .select('name, whatsapp, year, can_host_gd, can_host_pi, is_crisp, is_sac')
@@ -33,6 +33,8 @@ export default async function HomePage() {
       .from('enrollments')
       .select('slot_id, status, position')
       .eq('user_id', user.id),
+    supabase.from('room_status').select('id, name, location, status').order('name'),
+    supabase.from('host_directory').select('id, name').order('name'),
   ])
 
   const profile = profileRes.data
@@ -49,22 +51,12 @@ export default async function HomePage() {
     canHostPi: !!profile.can_host_pi,
     canManageRooms: isCrisp || !!profile.is_sac,
   }
-  const canHost =
-    capabilities.canHostGd || capabilities.canHostPi || capabilities.canManageRooms
 
-  // Hosting-only data: rooms + co-judges — loaded after profile since we need capabilities.
-  // canManageRooms is NOT included here — committee accounts manage rooms via /admin/rooms, not via hosting form.
   const canCreateSlot = capabilities.canHostGd || capabilities.canHostPi
-  let rooms: RoomOption[] = []
-  let judges: JudgeOption[] = []
-  if (canCreateSlot) {
-    const [roomsRes, judgesRes] = await Promise.all([
-      supabase.from('room_status').select('id, name, location, status').order('name'),
-      supabase.from('host_directory').select('id, name').order('name'),
-    ])
-    rooms = (roomsRes.data ?? []) as RoomOption[]
-    judges = (judgesRes.data ?? []).filter((j) => j.id !== user.id)
-  }
+  const rooms: RoomOption[] = canCreateSlot ? ((roomsRes.data ?? []) as RoomOption[]) : []
+  const judges: JudgeOption[] = canCreateSlot
+    ? ((judgesRes.data ?? []).filter((j) => j.id !== user.id) as JudgeOption[])
+    : []
 
   const hosts = new Map((hostsRes.data ?? []).map((h) => [h.id, h]))
   const myEnrollments = new Map(

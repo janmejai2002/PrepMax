@@ -14,11 +14,10 @@ export default async function RoomsAdminPage() {
 
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('name, is_crisp, is_sac')
-    .eq('id', user.id)
-    .single()
+  const [{ data: profile }, { data: rooms }] = await Promise.all([
+    supabase.from('profiles').select('name, is_crisp, is_sac').eq('id', user.id).single(),
+    supabase.from('rooms').select('*').order('name'),
+  ])
 
   const canManage = !!(profile?.is_crisp || profile?.is_sac)
   if (!canManage) redirect('/')
@@ -26,11 +25,6 @@ export default async function RoomsAdminPage() {
   const isSac = !!profile?.is_sac
   const isCrisp = !!profile?.is_crisp
   const isAdmin = !!(profile?.is_crisp || profile?.is_sac)
-
-  const { data: rooms } = await supabase
-    .from('rooms')
-    .select('*')
-    .order('name')
 
   return (
     <div className="min-h-screen bg-background pb-nav">

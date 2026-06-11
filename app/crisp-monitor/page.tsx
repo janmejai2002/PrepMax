@@ -12,15 +12,12 @@ export default async function MenteeMonitorPage() {
 
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('name, is_crisp')
-    .eq('id', user.id)
-    .single()
+  const [{ data: profile }, { data: result }] = await Promise.all([
+    supabase.from('profiles').select('name, is_crisp').eq('id', user.id).single(),
+    supabase.rpc('get_all_juniors'),
+  ])
 
   if (!profile?.is_crisp) redirect('/')
-
-  const { data: result } = await supabase.rpc('get_all_juniors')
 
   const juniors: Array<{
     id: string
