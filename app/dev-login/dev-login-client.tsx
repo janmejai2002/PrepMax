@@ -30,16 +30,16 @@ const PERSONAS: DevPersona[] = [
     badge: 'bg-gd-soft text-gd',
   },
   {
-    label: 'Senior + CRISP admin',
-    description: 'Second-year (b25), all flags ON except SAC, can manage rooms',
-    email: 'b25002@astra.xlri.ac.in',
+    label: 'CRISP committee',
+    description: 'Shared committee login — post view only',
+    email: 'crisp@xlri.ac.in',
     password: 'PrepMax@dev1',
     badge: 'bg-pi-soft text-pi',
   },
   {
-    label: 'Senior + SAC',
-    description: 'Second-year (b25), full admin: is_sac=true, all flags ON',
-    email: 'b25003@astra.xlri.ac.in',
+    label: 'SAC',
+    description: 'Shared SAC login — post view + room edit',
+    email: 'sacdelhi@xlri.ac.in',
     password: 'PrepMax@dev1',
     badge: 'bg-destructive/15 text-destructive',
   },
@@ -115,7 +115,7 @@ export function DevLoginClient() {
         <p className="text-[11px] font-semibold text-muted-foreground">Credentials (all accounts)</p>
         <p className="font-mono text-xs">Password: <span className="font-bold">PrepMax@dev1</span></p>
         <p className="text-[11px] text-muted-foreground">
-          Emails: <code>b26001</code> (junior) · <code>b25001-003</code> (seniors)
+          Students: <code>b26001</code> / <code>b25001</code> · Committee: <code>crisp@</code> / <code>sacdelhi@xlri.ac.in</code>
         </p>
       </div>
 

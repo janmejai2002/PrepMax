@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Form,
   FormControl,
@@ -24,9 +25,9 @@ import {
 } from '@/components/ui/select'
 import { toast } from 'sonner'
 import type { MentorOption } from '@/lib/types'
-import { inferYearFromEmail } from '@/lib/email-role'
+import { inferYearFromEmail, isCommitteeEmail } from '@/lib/email-role'
 
-const schema = z.object({
+const studentSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   phone: z.string().min(10, 'Enter a valid phone number'),
   whatsapp: z.string().min(10, 'Enter a valid WhatsApp number'),
@@ -35,7 +36,22 @@ const schema = z.object({
   section: z.string().min(1, 'Required'),
   roll: z.string().min(1, 'Required'),
   mentor_id: z.string().optional(),
+  bio: z.string().max(300).optional(),
 })
+
+const committeeSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  phone: z.string().optional(),
+  whatsapp: z.string().optional(),
+  year: z.enum(['first', 'second']).optional(),
+  batch: z.string().optional(),
+  section: z.string().optional(),
+  roll: z.string().optional(),
+  mentor_id: z.string().optional(),
+  bio: z.string().optional(),
+})
+
+const schema = studentSchema
 
 type FormValues = z.infer<typeof schema>
 
@@ -49,9 +65,11 @@ export default function OnboardingForm({ userId, email, mentors }: Props) {
   const router = useRouter()
   const supabase = createClient()
   const inferredYear = inferYearFromEmail(email)
+  const isCommittee = isCommitteeEmail(email)
+  const activeSchema = isCommittee ? committeeSchema : studentSchema
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(activeSchema),
     defaultValues: {
       name: '',
       phone: '',
@@ -61,6 +79,7 @@ export default function OnboardingForm({ userId, email, mentors }: Props) {
       section: '',
       roll: '',
       mentor_id: undefined,
+      bio: '',
     },
   })
 
@@ -69,7 +88,9 @@ export default function OnboardingForm({ userId, email, mentors }: Props) {
       id: userId,
       email,
       ...values,
+      year: isCommittee ? null : (values.year ?? inferredYear ?? 'first'),
       mentor_id: values.mentor_id || null,
+      bio: values.bio?.trim() || null,
     })
 
     if (error) {
@@ -98,36 +119,38 @@ export default function OnboardingForm({ userId, email, mentors }: Props) {
           )}
         />
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Phone</FormLabel>
-                <FormControl>
-                  <Input placeholder="+91 9876543210" className="h-11" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="whatsapp"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>WhatsApp</FormLabel>
-                <FormControl>
-                  <Input placeholder="+91 9876543210" className="h-11" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        {!isCommittee && (
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone</FormLabel>
+                  <FormControl>
+                    <Input placeholder="+91 9876543210" className="h-11" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="whatsapp"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>WhatsApp</FormLabel>
+                  <FormControl>
+                    <Input placeholder="+91 9876543210" className="h-11" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        )}
 
-        {inferredYear ? (
+        {!isCommittee && inferredYear ? (
           <div className="space-y-2">
             <p className="text-sm font-medium leading-none">Year</p>
             <div className="h-11 flex items-center rounded-md border bg-muted px-3 text-sm text-muted-foreground">
@@ -135,7 +158,7 @@ export default function OnboardingForm({ userId, email, mentors }: Props) {
               <span className="ml-auto text-xs opacity-60">set from your email</span>
             </div>
           </div>
-        ) : (
+        ) : !isCommittee ? (
           <FormField
             control={form.control}
             name="year"
@@ -157,51 +180,78 @@ export default function OnboardingForm({ userId, email, mentors }: Props) {
               </FormItem>
             )}
           />
+        ) : null}
+
+        {!isCommittee && (
+          <div className="grid grid-cols-3 gap-3">
+            <FormField
+              control={form.control}
+              name="batch"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Batch</FormLabel>
+                  <FormControl>
+                    <Input placeholder="PGP 25-27" className="h-11" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="section"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Section</FormLabel>
+                  <FormControl>
+                    <Input placeholder="A" className="h-11" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="roll"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Roll No.</FormLabel>
+                  <FormControl>
+                    <Input placeholder="P25001" className="h-11" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         )}
 
-        <div className="grid grid-cols-3 gap-3">
-          <FormField
-            control={form.control}
-            name="batch"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Batch</FormLabel>
-                <FormControl>
-                  <Input placeholder="PGP 25-27" className="h-11" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="section"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Section</FormLabel>
-                <FormControl>
-                  <Input placeholder="A" className="h-11" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="roll"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Roll No.</FormLabel>
-                <FormControl>
-                  <Input placeholder="P25001" className="h-11" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="bio"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                {isCommittee ? 'About (optional)' : 'Background (optional)'}
+              </FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder={
+                    isCommittee
+                      ? 'Brief note about your role…'
+                      : 'e.g. B.Tech CSE, 2 years at Infosys — or Fresher'
+                  }
+                  className="resize-none"
+                  rows={2}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-        {mentors.length > 0 && (
+        {!isCommittee && mentors.length > 0 && (
           <FormField
             control={form.control}
             name="mentor_id"

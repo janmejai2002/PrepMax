@@ -1,14 +1,16 @@
 /**
  * seed-dev-users.ts
  *
- * Creates 4 test accounts for stakeholder demos / phone testing.
+ * Creates 6 test accounts for stakeholder demos / phone testing.
  * Run with: npx tsx scripts/seed-dev-users.ts
  *
- * Emails follow the XLRI batch-year convention:
+ * Student emails follow the XLRI batch-year convention:
  *   b26001@astra.xlri.ac.in  — first year (junior)
  *   b25001@astra.xlri.ac.in  — second year (senior), can_host_gd + can_host_pi + is_mentor
- *   b25002@astra.xlri.ac.in  — second year (senior), all flags + is_crisp_admin
- *   b25003@astra.xlri.ac.in  — second year (senior), all flags + is_crisp_admin + is_sac
+ *
+ * Committee shared logins (@xlri.ac.in domain):
+ *   crisp@xlri.ac.in         — CRISP committee shared login (post view only)
+ *   sacdelhi@xlri.ac.in      — SAC shared login (post view + room edit)
  *
  *   Password: PrepMax@dev1
  */
@@ -36,65 +38,74 @@ const DEV_USERS = [
   {
     email: 'b26001@astra.xlri.ac.in',
     profile: {
-      name:          'Dev Junior',
-      year:          'first',   // enforced by DB trigger (b26 → first)
-      batch:         'PGDM 2026',
-      section:       'A',
-      roll:          'DEV001',
-      can_host_gd:   false,
-      can_host_pi:   false,
-      is_mentor:     false,
-      is_committee:  false,
-      is_crisp_admin:false,
-      is_sac:        false,
+      name:           'Dev Junior',
+      year:           'first',   // enforced by DB trigger (b26 → first)
+      batch:          'PGDM 2026',
+      section:        'A',
+      roll:           'DEV001',
+      bio:            'B.Tech Computer Science, fresher',
+      can_host_gd:    false,
+      can_host_pi:    false,
+      is_mentor:      false,
+      is_committee:   false,
+      is_crisp_admin: false,
+      is_crisp_member:false,
+      is_sac:         false,
     },
   },
   {
     email: 'b25001@astra.xlri.ac.in',
     profile: {
-      name:          'Dev Senior',
-      year:          'second',  // enforced by DB trigger (b25 → second)
-      batch:         'PGDM 2025',
-      section:       'B',
-      roll:          'DEV002',
-      can_host_gd:   true,
-      can_host_pi:   true,
-      is_mentor:     true,
-      is_committee:  false,
-      is_crisp_admin:false,
-      is_sac:        false,
+      name:           'Dev Senior',
+      year:           'second',  // enforced by DB trigger (b25 → second)
+      batch:          'PGDM 2025',
+      section:        'B',
+      roll:           'DEV002',
+      bio:            'IIT Delhi, 3 years at McKinsey before XLRI',
+      can_host_gd:    true,
+      can_host_pi:    true,
+      is_mentor:      true,
+      is_committee:   false,
+      is_crisp_admin: false,
+      is_crisp_member:false,
+      is_sac:         false,
+    },
+  },
+  // Committee shared logins — year is null (set by DB trigger for @xlri.ac.in)
+  {
+    email: 'crisp@xlri.ac.in',
+    profile: {
+      name:           'CRISP Committee',
+      year:           null,      // enforced by DB trigger (@xlri.ac.in → null)
+      batch:          null,
+      section:        null,
+      roll:           null,
+      bio:            'CRISP placement committee shared login',
+      can_host_gd:    false,
+      can_host_pi:    false,
+      is_mentor:      false,
+      is_committee:   true,
+      is_crisp_admin: false,
+      is_crisp_member:false,
+      is_sac:         false,
     },
   },
   {
-    email: 'b25002@astra.xlri.ac.in',
+    email: 'sacdelhi@xlri.ac.in',
     profile: {
-      name:          'Dev CRISP Admin',
-      year:          'second',  // enforced by DB trigger (b25 → second)
-      batch:         'PGDM 2025',
-      section:       'C',
-      roll:          'DEV003',
-      can_host_gd:   true,
-      can_host_pi:   true,
-      is_mentor:     true,
-      is_committee:  true,
-      is_crisp_admin:true,
-      is_sac:        false,
-    },
-  },
-  {
-    email: 'b25003@astra.xlri.ac.in',
-    profile: {
-      name:          'Dev SAC Admin',
-      year:          'second',  // enforced by DB trigger (b25 → second)
-      batch:         'PGDM 2025',
-      section:       'D',
-      roll:          'DEV004',
-      can_host_gd:   true,
-      can_host_pi:   true,
-      is_mentor:     true,
-      is_committee:  true,
-      is_crisp_admin:true,
-      is_sac:        true,
+      name:           'SAC Delhi',
+      year:           null,      // enforced by DB trigger (@xlri.ac.in → null)
+      batch:          null,
+      section:        null,
+      roll:           null,
+      bio:            'SAC (Student Activities Council) shared login',
+      can_host_gd:    false,
+      can_host_pi:    false,
+      is_mentor:      false,
+      is_committee:   true,
+      is_crisp_admin: false,
+      is_crisp_member:false,
+      is_sac:         true,
     },
   },
 ]
