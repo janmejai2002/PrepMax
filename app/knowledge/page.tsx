@@ -1,8 +1,30 @@
+import { unstable_cache } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { BottomNav } from '@/components/nav/bottom-nav'
 import { KnowledgeFeedClient } from './knowledge-feed-client'
 import type { KnowledgePost } from '@/lib/types'
+
+// Knowledge posts are global (same for every user) — cache 60s on the server.
+// Invalidated when a new post is created (via revalidateTag in the post action).
+const getCachedPosts = unstable_cache(
+  async () => {
+    const sb = createServiceClient()
+    const { data } = await sb
+      .from('knowledge_posts')
+      .select(`
+        id, author_id, title, body, tags, function_tag, is_pinned, created_at, updated_at,
+        profiles!knowledge_posts_author_id_fkey ( name )
+      `)
+      .order('is_pinned', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(50)
+    return data ?? []
+  },
+  ['knowledge-posts'],
+  { revalidate: 60, tags: ['knowledge-posts'] }
+)
 
 export default async function KnowledgePage() {
   const supabase = await createClient()
@@ -11,21 +33,14 @@ export default async function KnowledgePage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('is_committee, is_crisp_admin, is_sac')
-    .eq('id', user.id)
-    .single()
-
-  const { data: posts } = await supabase
-    .from('knowledge_posts')
-    .select(`
-      id, author_id, title, body, tags, function_tag, is_pinned, created_at, updated_at,
-      profiles!knowledge_posts_author_id_fkey ( name )
-    `)
-    .order('is_pinned', { ascending: false })
-    .order('created_at', { ascending: false })
-    .limit(50)
+  const [{ data: profile }, posts] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('is_committee, is_crisp_admin, is_sac')
+      .eq('id', user.id)
+      .single(),
+    getCachedPosts(),
+  ])
 
   const typedPosts: KnowledgePost[] = (posts ?? []).map((p: Record<string, unknown>) => ({
     ...(p as Omit<KnowledgePost, 'author_name'>),

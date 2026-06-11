@@ -11,11 +11,14 @@ export default async function MyRequestsPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('name, year, can_host_gd, can_host_pi, is_committee, is_crisp_admin, is_sac, is_mentor')
-    .eq('id', user.id)
-    .single()
+  const [{ data: profile }, { data: raw }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('name, year, can_host_gd, can_host_pi, is_committee, is_crisp_admin, is_sac, is_mentor')
+      .eq('id', user.id)
+      .single(),
+    supabase.rpc('get_my_requests'),
+  ])
 
   if (!profile) redirect('/onboarding')
 
@@ -28,8 +31,6 @@ export default async function MyRequestsPage() {
 
   // Seniors use the /requests page to browse the anonymous feed
   if (isSenior) redirect('/requests')
-
-  const { data: raw } = await supabase.rpc('get_my_requests')
   const requests: MySlotRequest[] = Array.isArray(raw) ? raw : []
 
   return (

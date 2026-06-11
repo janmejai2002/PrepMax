@@ -11,11 +11,14 @@ export default async function RequestsPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('year, can_host_gd, can_host_pi, is_committee, is_crisp_admin, is_sac, is_mentor')
-    .eq('id', user.id)
-    .single()
+  const [{ data: profile }, { data: raw }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('year, can_host_gd, can_host_pi, is_committee, is_crisp_admin, is_sac, is_mentor')
+      .eq('id', user.id)
+      .single(),
+    supabase.rpc('get_open_requests'),
+  ])
 
   if (!profile) redirect('/onboarding')
 
@@ -28,8 +31,6 @@ export default async function RequestsPage() {
 
   // Juniors can't browse the anonymous senior feed — redirect to their own page
   if (!isSenior) redirect('/my-requests')
-
-  const { data: raw } = await supabase.rpc('get_open_requests')
   const requests: OpenRequest[] = Array.isArray(raw) ? raw : []
 
   return (

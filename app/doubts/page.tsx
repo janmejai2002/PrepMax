@@ -11,17 +11,18 @@ export default async function DoubtsPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('is_crisp_admin, is_sac')
-    .eq('id', user.id)
-    .single()
-
-  const { data: doubts } = await supabase
-    .from('doubts_feed')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(50)
+  const [{ data: profile }, { data: doubts }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('is_crisp_admin, is_sac')
+      .eq('id', user.id)
+      .single(),
+    supabase
+      .from('doubts_feed')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50),
+  ])
 
   const isAdmin = !!(profile?.is_crisp_admin || profile?.is_sac)
 
