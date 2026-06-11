@@ -225,3 +225,25 @@ export interface ConfirmSlotResult {
   cc: string[]
   error?: string
 }
+
+export type NotificationType =
+  | 'match_confirmed'
+  | 'interest_expressed'
+  | 'non_chosen'
+  | 'request_cancelled'
+  | 'waitlist_promoted'
+  | 'slot_cancelled'
+  | 'slot_edited'
+  | 'session_reminder'
+  | 'mentee_added'
+
+export interface AppNotification {
+  id: string
+  type: NotificationType
+  title: string
+  body: string
+  link: string | null
+  payload: Record<string, unknown>
+  read_at: string | null
+  created_at: string
+}

@@ -12,6 +12,7 @@ import {
 import { LogOut, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { initials } from '@/lib/format'
+import { NotificationBell } from './notification-bell'
 
 export type NavRole = 'junior' | 'senior' | 'crisp' | 'sac'
 
@@ -49,6 +50,9 @@ export function AppHeader({ name, role }: { name: string; role: NavRole }) {
     <header className="sticky top-0 z-40 border-b border-border/40 bg-background/85 backdrop-blur-xl">
       <div className="mx-auto flex h-[52px] max-w-md items-center justify-between px-4">
         <span className="text-[15px] font-bold tracking-tight select-none">PrepMax</span>
+
+        <div className="flex items-center gap-1">
+          <NotificationBell />
 
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -88,6 +92,7 @@ export function AppHeader({ name, role }: { name: string; role: NavRole }) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
       </div>
     </header>
   )
