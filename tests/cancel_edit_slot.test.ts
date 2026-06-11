@@ -86,6 +86,11 @@ afterAll(async () => {
 }, 30_000)
 
 beforeEach(async () => {
+  // Clear any prior enrollments so the time_conflict check doesn't block re-joining
+  for (const uid of [j1Id, j2Id, j3Id]) {
+    if (uid) await adminSb.from('enrollments').delete().eq('user_id', uid)
+  }
+
   const now = new Date()
   const { data: slot } = await adminSb
     .from('slots')

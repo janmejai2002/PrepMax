@@ -5,7 +5,7 @@
 ---
 
 ## Current Phase
-**Phase 6 — Complete + Attendance Hardened + Junior-Request Flow + Navigation Performance + Committee Gating + SAC Notify. All phases 1-6 shipped. 145/145 tests green.**
+**Phase 6 — Complete + Role/View Reconciled + Scheduling Clash Detection + Mentee Monitor. All phases 1-6 shipped. 153/153 tests green.**
 
 ## Status
 
@@ -55,7 +55,7 @@
 | dev seed users | ✅ Done | 4 test accounts via `npx tsx scripts/seed-dev-users.ts` |
 | Vercel deploy | ✅ Done | https://prep-max-alpha.vercel.app |
 | GitHub repo | ✅ Done | https://github.com/janmejai2002/PrepMax |
-| Tests | ✅ Done | 145/145 passing (13 new committee-gating tests; fileParallelism=false prevents auth rate-limit flakes) |
+| Tests | ✅ Done | 153/153 passing |
 | lib/email-role.ts | ✅ Done | inferYearFromEmail + isCommitteeEmail + isSacEmail + isCrispEmail |
 | Committee gating | ✅ Done | @xlri.ac.in accounts redirected from /, /requests, /my-requests, /doubts → /knowledge |
 | SAC notify button | ✅ Done | "Notify CRISP" button on /admin/rooms (SAC-only); server action inserts outbox events for all is_committee members |
@@ -63,6 +63,9 @@
 | lib/supabase/service.ts | ✅ Done | Service-role client for cached server queries (outside request scope) |
 | Navigation perf | ✅ Done | loading.tsx on 11 routes (added cockpit/myqr/s) + home page profile+feed now parallel (−1 serial hop) + cockpit queries parallel; ~5s→instant skeleton |
 | Migration 022 | ✅ Done | slots.reminder_sent_at + insert_slot_reminders() + express_interest/confirm_match write outbox |
+| Migration 023 | ✅ Done | join_slot v4 (senior block + junior time-conflict), edit_slot v2 (room double-booking), create_slot RPC (host+room overlap), get_all_juniors/assign_mentee/unassign_mentee |
+| /crisp-monitor | ✅ Done | CRISP member mentee monitor: all juniors list + assign/unassign with search + filter |
+| Role/View guards | ✅ Done | SAC→rooms-only nav+redirect; CRISP member→rooms+monitor tabs; seniors→canJoin=false; slot creation→create_slot RPC |
 | Email: interest_expressed | ✅ Done | express_interest() writes outbox row → junior notified when senior marks interest (idempotent) |
 | Email: match_confirmed | ✅ Done | confirm_match() writes 2 outbox rows → junior (match confirmation) + senior (selection + junior contact) |
 | Email: slot_reminder_30m | ✅ Done | insert_slot_reminders() SQL function queued by drain-notifications at top of each run; dedup via reminder_sent_at |
@@ -115,8 +118,9 @@ Magic link works right now without any extra config.
 ## Exact Next Step (open this at the start of the next session)
 
 1. **Enable email notifications** (user action): Set `RESEND_API_KEY` + `APP_URL` in Supabase Edge Function secrets, then schedule `drain-notifications` cron every 60s — see "One action still needed" above.
-2. **Phone-based Playwright E2E** — run `/ship-check` at 390×844. Fix any regressions.
+2. **Phone-based Playwright E2E** — run `/ship-check` at 390×844 for each role (junior, senior, crisp-member, sac). Fix any regressions.
 3. **Phase 7 Hardening** — RLS audit, Lighthouse mobile pass, Sentry stub, RUNBOOK.md.
+4. **Scheduling clash audit report** — write the written report (all clash scenarios enumerated, each marked COVERED/NOT-COVERED). Partially done: join_slot + edit_slot + create_slot covered. Remaining: leave_slot waitlist-promotion edge case, confirm_match senior scheduling overlap.
 
 ## Possible Future Enhancements (V2)
 - No-show penalty: 24h booking cooldown after 2 no-shows in 7 days (config-flagged — data path already built)
@@ -147,3 +151,4 @@ Magic link works right now without any extra config.
 | 2026-06-11 | Session 16: Shareable test deployment. Mirrored b25349 flags → b25426 in Supabase (can_host_gd/pi, is_mentor, is_committee, is_crisp_admin, is_sac). Re-gated /dev-login behind ALLOW_DEV_LOGIN=true env flag (export const dynamic='force-dynamic' + .trim() for robustness). Fixed pre-existing onboarding-form zodResolver TS error (blocked Vercel build). Seeded 4 dev accounts against prod Supabase. Live: https://prep-max-alpha.vercel.app/dev-login. 145/145 tests. |
 | 2026-06-11 | Session 17: User feedback fixes. BLOCKING: @xlri.ac.in login blocked by domain check in login-client.tsx + auth/callback — fixed both to allow @xlri.ac.in. Dev-login link now shows on /login when ALLOW_DEV_LOGIN=true. Committee feed: removed redirect-to-knowledge from / and /doubts so committee (and senior+committee hybrids like b25349) can browse Slots feed read-only + Doubts. Committee BottomNav: Feed|Knowledge|Doubts|[Admin]|Profile. BottomNav: Mentor/Admin now adds as 6th tab (Profile always kept). Role Management Portal: /admin/roles with 7-flag toggles per user (CRISP-admin/SAC gated). Admin nav: Roles tab added to rooms+stats pages. Perf: loading.tsx for /admin/rooms and /admin/roles. canCreateSlot separated from canManageRooms. Push notifications plan delivered (item 6). 145/145 tests. |
 | 2026-06-12 | Session 18: Email path complete. Migration 022: slots.reminder_sent_at + insert_slot_reminders() SQL function + express_interest/confirm_match updated to write outbox. drain-notifications v2: templates for interest_expressed, match_confirmed (junior+senior), slot_reminder_30m; calls insert_slot_reminders() at top of each run. Perf: loading.tsx added to cockpit/myqr/s routes; home page collapsed profile+feed queries into single parallel Promise.all (−1 serial hop); cockpit queries parallelised. 153/153 tests. User must add RESEND_API_KEY + schedule drain cron to activate emails. BUGFIX: proxy.ts (Next.js 16 middleware layer) was missing @xlri.ac.in in isEmailAllowed — committee accounts were being signed out on every request. Fixed + deployed. |
+| 2026-06-12 | Session 19: Role/view reconciliation + scheduling clash detection + mentee monitor. Migration 023: join_slot v4 (seniors blocked + junior time-conflict check), edit_slot v2 (room double-booking on time-change), create_slot RPC (host-overlap + room-overlap checks, co-judges bundled), get_all_juniors/assign_mentee/unassign_mentee RPCs. BottomNav: SAC→single Rooms tab, CRISP member→Rooms+Monitor tabs. SAC redirected from / to /admin/rooms. Senior join button hidden (canJoin prop thread through SlotsFeed→SlotCard + me.isSenior in slot-detail-client). /admin/rooms now accessible to is_crisp_member. New /crisp-monitor page: mentee list with search/filter, assign/unassign buttons. host-slot-sheet.tsx migrated from direct INSERT to create_slot RPC. 153/153 tests. |
