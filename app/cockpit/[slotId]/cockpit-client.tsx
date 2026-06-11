@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import QRCode from 'react-qr-code'
-import { Check, Loader2, RefreshCw, Square, Users, MessageSquare, X, UserCheck } from 'lucide-react'
+import {
+  Check, Loader2, RefreshCw, Square, Users, MessageSquare, X, UserCheck,
+  PlayCircle, AlertTriangle,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
@@ -47,7 +50,7 @@ function ScorePicker({
             className={cn(
               'h-8 w-8 rounded-full text-sm font-semibold transition-all',
               value === n
-                ? 'bg-gd text-white'
+                ? 'bg-gd text-white scale-110'
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
             )}
           >
@@ -123,7 +126,7 @@ function FeedbackDrawer({
           </button>
         </div>
 
-        <div className="overflow-y-auto max-h-[70vh] px-4 py-4 space-y-5">
+        <div className="overflow-y-auto max-h-[72vh] px-4 py-4 space-y-5">
           {fb.submitted ? (
             <div className="flex flex-col items-center gap-3 py-8 text-center">
               <span className="flex h-12 w-12 items-center justify-center rounded-full bg-success/15">
@@ -136,7 +139,7 @@ function FeedbackDrawer({
             <>
               {/* scores */}
               <div className="space-y-3">
-                <p className="text-sm font-semibold">Scores (1 = low, 5 = excellent)</p>
+                <p className="text-sm font-semibold">Scores <span className="text-muted-foreground font-normal">(1 = low · 5 = excellent)</span></p>
                 {SCORE_DIMS.map((dim) => (
                   <ScorePicker
                     key={dim}
@@ -181,7 +184,7 @@ function FeedbackDrawer({
 
               {/* notes */}
               <div>
-                <p className="text-sm font-semibold mb-1.5">Private notes (optional)</p>
+                <p className="text-sm font-semibold mb-1.5">Private notes <span className="text-muted-foreground font-normal">(optional)</span></p>
                 <textarea
                   value={fb.notes}
                   onChange={(e) => setFb((f) => ({ ...f, notes: e.target.value }))}
@@ -213,6 +216,7 @@ export function CockpitClient({ slot: initialSlot, me }: { slot: SlotDetail; me:
   const [tokenState, setTokenState] = useState<TokenState | null>(null)
   const [starting, setStarting] = useState(false)
   const [finalizing, setFinalizing] = useState(false)
+  const [confirmEnd, setConfirmEnd] = useState(false)
   const [feedbackFor, setFeedbackFor] = useState<RosterEntry | null>(null)
   const [feedbackDone, setFeedbackDone] = useState<Set<string>>(new Set())
   const [markingAttended, setMarkingAttended] = useState<Set<string>>(new Set())
@@ -225,8 +229,9 @@ export function CockpitClient({ slot: initialSlot, me }: { slot: SlotDetail; me:
   const isCompleted = slot.status === 'completed'
   const rosterEntries = Array.isArray(slot.roster) ? (slot.roster as RosterEntry[]) : []
 
-  const attendedCount  = rosterEntries.filter((r) => r.status === 'attended').length
-  const confirmedCount = rosterEntries.filter((r) => r.status === 'confirmed').length
+  const attendedCount   = rosterEntries.filter((r) => r.status === 'attended').length
+  const confirmedCount  = rosterEntries.filter((r) => r.status === 'confirmed').length
+  const feedbackTargets = rosterEntries.filter((r) => r.status !== 'no_show' && r.user_id !== me.id)
 
   // Countdown tick
   useEffect(() => {
@@ -238,26 +243,28 @@ export function CockpitClient({ slot: initialSlot, me }: { slot: SlotDetail; me:
     return () => clearInterval(tick)
   }, [tokenState])
 
-  // Auto-rotate token every TOKEN_INTERVAL_MS while live
   const rotate = useCallback(async () => {
     const { data, error } = await supabase.rpc('rotate_token', { p_slot_id: slot.id })
     if (error || data?.error) return
     setTokenState({ token: data.token, expiresAt: new Date(data.expires_at) })
   }, [slot.id, supabase])
 
+  // Auto-rotate token every TOKEN_INTERVAL_MS while live
   useEffect(() => {
     if (!isLive) return
+    // On mount / reconnect while live: fetch a token immediately if we don't have one
+    if (!tokenState) { rotate() }
     if (rotateRef.current) clearInterval(rotateRef.current)
     rotateRef.current = setInterval(rotate, TOKEN_INTERVAL_MS)
     return () => { if (rotateRef.current) clearInterval(rotateRef.current) }
-  }, [isLive, rotate])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLive])
 
   // Realtime roster updates
   useEffect(() => {
     const channel = supabase
       .channel(`cockpit-${slot.id}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'enrollments' }, async () => {
-        // Refresh roster via get_slot_detail
         const { data } = await supabase.rpc('get_slot_detail', { p_slot_id: slot.id })
         if (data && !data.error) setSlot(data as SlotDetail)
       })
@@ -273,7 +280,7 @@ export function CockpitClient({ slot: initialSlot, me }: { slot: SlotDetail; me:
     setSlot((s) => ({ ...s, status: 'live' }))
     setTokenState({ token: data.token, expiresAt: new Date(data.expires_at) })
     setTab('qr')
-    toast.success('Session started! QR is live.')
+    toast.success('Session started! Show the QR code to participants.')
   }
 
   async function handleFinalize() {
@@ -284,9 +291,9 @@ export function CockpitClient({ slot: initialSlot, me }: { slot: SlotDetail; me:
     if (rotateRef.current) clearInterval(rotateRef.current)
     setSlot((s) => ({ ...s, status: 'completed' }))
     setTokenState(null)
+    setConfirmEnd(false)
     toast.success(`Session ended — ${data.attended} attended, ${data.no_show} no-show.`)
     setTab('roster')
-    // Refresh roster
     const { data: fresh } = await supabase.rpc('get_slot_detail', { p_slot_id: slot.id })
     if (fresh && !fresh.error) setSlot(fresh as SlotDetail)
   }
@@ -308,7 +315,6 @@ export function CockpitClient({ slot: initialSlot, me }: { slot: SlotDetail; me:
       return
     }
     toast.success(`${name.split(' ')[0]} marked as attended.`)
-    // Refresh roster
     const { data: fresh } = await supabase.rpc('get_slot_detail', { p_slot_id: slot.id })
     if (fresh && !fresh.error) setSlot(fresh as SlotDetail)
   }
@@ -335,7 +341,7 @@ export function CockpitClient({ slot: initialSlot, me }: { slot: SlotDetail; me:
             </span>
           )}
           {isCompleted && (
-            <span className="rounded-full bg-muted px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
+            <span className="rounded-full bg-success/10 px-2.5 py-1 text-[10px] font-medium text-success">
               Completed
             </span>
           )}
@@ -344,11 +350,12 @@ export function CockpitClient({ slot: initialSlot, me }: { slot: SlotDetail; me:
       </div>
 
       {/* stats row */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className={cn('grid gap-2', isCompleted ? 'grid-cols-4' : 'grid-cols-3')}>
         {[
           { label: 'Confirmed', value: confirmedCount, color: 'text-gd' },
           { label: 'Attended',  value: attendedCount,  color: 'text-success' },
           { label: 'Capacity',  value: slot.capacity,  color: 'text-foreground' },
+          ...(isCompleted ? [{ label: 'Feedback', value: feedbackDone.size, color: feedbackDone.size >= feedbackTargets.length && feedbackTargets.length > 0 ? 'text-success' : 'text-amber-500' }] : []),
         ].map(({ label, value, color }) => (
           <div key={label} className="rounded-xl border bg-card p-3 text-center">
             <p className={cn('text-2xl font-bold tabular-nums', color)}>{value}</p>
@@ -357,46 +364,96 @@ export function CockpitClient({ slot: initialSlot, me }: { slot: SlotDetail; me:
         ))}
       </div>
 
-      {/* start / end session */}
+      {/* pre-start state */}
       {!isLive && !isCompleted && (
-        <button onClick={handleStart} disabled={starting}
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-destructive/90 text-white font-semibold text-sm disabled:opacity-70">
-          {starting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          {starting ? 'Starting…' : 'Start session'}
-        </button>
-      )}
-      {isLive && (
-        <button onClick={handleFinalize} disabled={finalizing}
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-full border border-destructive/60 text-destructive font-semibold text-sm hover:bg-destructive/10 disabled:opacity-70">
-          {finalizing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Square className="h-4 w-4" />}
-          {finalizing ? 'Ending…' : 'End session'}
-        </button>
+        <div className="rounded-2xl border border-border/60 bg-card p-4 flex items-start gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gd-soft">
+            <PlayCircle className="h-5 w-5 text-gd" />
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold mb-0.5">Ready to start?</p>
+            <p className="text-[12px] text-muted-foreground leading-relaxed">
+              {confirmedCount > 0
+                ? `${confirmedCount} participant${confirmedCount > 1 ? 's' : ''} confirmed. Once you start, a QR code will appear for attendance.`
+                : 'No confirmed participants yet — you can still start and mark attendance manually.'}
+            </p>
+            <button
+              onClick={handleStart}
+              disabled={starting}
+              className="mt-3 flex h-10 items-center gap-2 rounded-full bg-destructive/90 px-5 text-white font-semibold text-sm disabled:opacity-70"
+            >
+              {starting ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" />}
+              {starting ? 'Starting…' : 'Start session'}
+            </button>
+          </div>
+        </div>
       )}
 
-      {/* tabs */}
-      <div className="flex h-10 items-center gap-1 rounded-full border border-border/70 bg-card p-1">
-        {([
-          { value: 'roster', label: 'Roster', icon: Users },
-          { value: 'qr',     label: 'QR Code', icon: RefreshCw },
-        ] as const).map(({ value, label, icon: Icon }) => (
-          <button key={value} onClick={() => setTab(value)}
-            className={cn(
-              'flex h-full flex-1 items-center justify-center gap-1.5 rounded-full text-[13px] font-semibold transition-all',
-              tab === value ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground'
-            )}>
-            <Icon className="h-3.5 w-3.5" />
-            {label}
+      {/* end session: two-step inline confirm */}
+      {isLive && (
+        confirmEnd ? (
+          <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
+              <p className="text-sm font-semibold text-destructive">End this session?</p>
+            </div>
+            <p className="text-[12px] text-muted-foreground">
+              Participants who haven't been marked will become no-shows. This can't be undone.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmEnd(false)}
+                className="flex-1 h-10 rounded-full border text-sm font-medium hover:bg-muted transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleFinalize}
+                disabled={finalizing}
+                className="flex-1 flex h-10 items-center justify-center gap-2 rounded-full bg-destructive text-white font-semibold text-sm disabled:opacity-70"
+              >
+                {finalizing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Square className="h-3.5 w-3.5" />}
+                {finalizing ? 'Ending…' : 'Yes, end it'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirmEnd(true)}
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-full border border-destructive/60 text-destructive font-semibold text-sm hover:bg-destructive/10 transition-colors"
+          >
+            <Square className="h-4 w-4" />
+            End session
           </button>
-        ))}
-      </div>
+        )
+      )}
+
+      {/* tabs — only show when live or completed */}
+      {(isLive || isCompleted) && (
+        <div className="flex h-10 items-center gap-1 rounded-full border border-border/70 bg-card p-1">
+          {([
+            { value: 'roster', label: 'Roster', icon: Users },
+            { value: 'qr',     label: 'QR Code', icon: RefreshCw },
+          ] as const).map(({ value, label, icon: Icon }) => (
+            <button key={value} onClick={() => setTab(value)}
+              className={cn(
+                'flex h-full flex-1 items-center justify-center gap-1.5 rounded-full text-[13px] font-semibold transition-all',
+                tab === value ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground'
+              )}>
+              <Icon className="h-3.5 w-3.5" />
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* QR tab */}
-      {tab === 'qr' && (
+      {tab === 'qr' && (isLive || isCompleted) && (
         <div className="space-y-4">
           {isLive && tokenState ? (
             <>
               <div className="flex flex-col items-center gap-4 rounded-2xl border bg-card p-6">
-                <div className="rounded-xl bg-white p-3">
+                <div className="rounded-xl bg-white p-3 shadow-sm">
                   <QRCode value={checkinUrl} size={200} />
                 </div>
                 <div className="text-center">
@@ -412,21 +469,32 @@ export function CockpitClient({ slot: initialSlot, me }: { slot: SlotDetail; me:
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground text-center max-w-xs">
-                  Slot share QR. For attendance: tap the <strong>✓</strong> button next to each participant in the Roster, or scan their personal QR from <code>/myqr/[slotId]</code>.
+                  Show this to participants — scanning marks their attendance. Or tap <strong>✓</strong> next to their name in the Roster.
                 </p>
               </div>
 
               <button onClick={manualRotate}
-                className="flex h-10 w-full items-center justify-center gap-2 rounded-full border text-sm text-muted-foreground hover:text-foreground hover:bg-muted">
+                className="flex h-10 w-full items-center justify-center gap-2 rounded-full border text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                 <RefreshCw className="h-3.5 w-3.5" />
-                Refresh now
+                Refresh QR now
               </button>
             </>
+          ) : isLive && !tokenState ? (
+            <div className="flex flex-col items-center gap-3 py-8 text-center">
+              <Loader2 className="h-8 w-8 text-muted-foreground/40 animate-spin" />
+              <p className="text-sm text-muted-foreground">Loading QR code…</p>
+              <button
+                onClick={manualRotate}
+                className="text-xs text-gd underline"
+              >
+                Tap to retry
+              </button>
+            </div>
           ) : (
             <div className="flex flex-col items-center gap-3 py-12 text-center">
               <RefreshCw className="h-8 w-8 text-muted-foreground/40" />
               <p className="text-sm text-muted-foreground">
-                {isCompleted ? 'Session ended — QR is no longer active.' : 'Start the session to display the QR code.'}
+                Session ended — QR code is no longer active.
               </p>
             </div>
           )}
@@ -437,13 +505,16 @@ export function CockpitClient({ slot: initialSlot, me }: { slot: SlotDetail; me:
       {tab === 'roster' && (
         <div className="space-y-2">
           {rosterEntries.length === 0 ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">
-              No one has a confirmed seat yet.
+            <div className="rounded-2xl border border-border/50 bg-card py-10 text-center">
+              <Users className="mx-auto h-8 w-8 text-muted-foreground/30 mb-2" />
+              <p className="text-sm text-muted-foreground">
+                {isLive ? 'Participants will appear here as they join.' : 'No confirmed participants.'}
+              </p>
             </div>
           ) : (
             rosterEntries.map((r) => (
               <div key={r.user_id}
-                className="flex items-center gap-3 rounded-xl border bg-card px-3 py-2.5">
+                className="flex items-center gap-3 rounded-xl border bg-card px-3 py-2.5 transition-colors">
                 <span className={cn(
                   'flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-bold',
                   r.status === 'attended' ? 'bg-success/15 text-success' :
@@ -463,6 +534,7 @@ export function CockpitClient({ slot: initialSlot, me }: { slot: SlotDetail; me:
                      r.status === 'no_show'  ? 'No-show' : `Seat #${r.position}`}
                   </p>
                 </div>
+
                 {/* mark attended — visible while live, only for confirmed seats */}
                 {isLive && r.status === 'confirmed' && (
                   <button
@@ -478,10 +550,11 @@ export function CockpitClient({ slot: initialSlot, me }: { slot: SlotDetail; me:
                   </button>
                 )}
 
-                {/* feedback button — visible after session ends */}
-                {isCompleted && r.status !== 'no_show' && r.user_id !== me.id && (
+                {/* feedback button — show after live OR completed, not for no-shows or self */}
+                {(isLive || isCompleted) && r.status !== 'no_show' && r.user_id !== me.id && (
                   <button
                     onClick={() => setFeedbackFor(r)}
+                    title={feedbackDone.has(r.user_id) ? 'Feedback submitted' : 'Give feedback'}
                     className={cn(
                       'flex h-8 w-8 items-center justify-center rounded-full transition-colors',
                       feedbackDone.has(r.user_id)
@@ -497,6 +570,20 @@ export function CockpitClient({ slot: initialSlot, me }: { slot: SlotDetail; me:
                 )}
               </div>
             ))
+          )}
+
+          {/* feedback summary after session ends */}
+          {isCompleted && feedbackTargets.length > 0 && (
+            <div className={cn(
+              'rounded-xl border px-4 py-3 text-[12px] font-medium',
+              feedbackDone.size >= feedbackTargets.length
+                ? 'border-success/30 bg-success/5 text-success'
+                : 'border-border/50 bg-muted/30 text-muted-foreground'
+            )}>
+              {feedbackDone.size >= feedbackTargets.length
+                ? `All ${feedbackTargets.length} feedback${feedbackTargets.length > 1 ? 's' : ''} submitted!`
+                : `${feedbackDone.size}/${feedbackTargets.length} feedback${feedbackTargets.length > 1 ? 's' : ''} given — tap the chat icon to continue.`}
+            </div>
           )}
         </div>
       )}
