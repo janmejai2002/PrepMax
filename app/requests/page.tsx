@@ -14,7 +14,7 @@ export default async function RequestsPage() {
   const [{ data: profile }, { data: raw }] = await Promise.all([
     supabase
       .from('profiles')
-      .select('year, can_host_gd, can_host_pi, is_committee, is_crisp_admin, is_sac, is_mentor')
+      .select('year, can_host_gd, can_host_pi, is_crisp, is_sac')
       .eq('id', user.id)
       .single(),
     supabase.rpc('get_open_requests'),
@@ -22,8 +22,8 @@ export default async function RequestsPage() {
 
   if (!profile) redirect('/onboarding')
 
-  // Committee accounts see only the knowledge/post view
-  if (profile.is_committee || profile.is_crisp_admin || profile.is_sac) redirect('/knowledge')
+  // CRISP/SAC accounts see only the knowledge/post view
+  if (profile.is_crisp || profile.is_sac) redirect('/knowledge')
 
   const isSenior =
     profile.can_host_gd ||
@@ -37,8 +37,6 @@ export default async function RequestsPage() {
     <div className="min-h-screen bg-background pb-nav">
       <RequestsFeedClient initialRequests={requests} />
       <BottomNav
-        isAdmin={!!(profile.is_crisp_admin || profile.is_sac)}
-        isMentor={!!profile.is_mentor}
         isSenior={isSenior}
       />
     </div>

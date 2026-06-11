@@ -22,11 +22,11 @@ export async function notifyCrispMembers(message: string): Promise<{ error?: str
 
   const service = createServiceClient()
 
-  // Notify all committee members (excludes the SAC caller themselves)
+  // Notify all CRISP members (excludes the SAC caller themselves)
   const { data: members } = await service
     .from('profiles')
     .select('id, email, name')
-    .eq('is_committee', true)
+    .eq('is_crisp', true)
     .neq('id', user.id)
 
   if (!members?.length) return { error: 'no_members' }

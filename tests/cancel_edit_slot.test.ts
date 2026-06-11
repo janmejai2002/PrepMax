@@ -53,11 +53,11 @@ beforeAll(async () => {
   j3Id    = await upsertUser(J3_EMAIL, PASSWORD)
 
   await adminSb.from('profiles').upsert([
-    { id: hostId,  email: HOST_EMAIL,  name: 'CE Host',  year: 'second', batch: 'PGP 2024-26', section: 'A', roll: 'CEHOST', can_host_gd: true,  can_host_pi: false, is_mentor: false, is_committee: false, is_crisp_admin: false, is_sac: false },
-    { id: adminId, email: ADMIN_EMAIL, name: 'CE Admin', year: 'second', batch: 'PGP 2024-26', section: 'A', roll: 'CEADMN', can_host_gd: false, can_host_pi: false, is_mentor: false, is_committee: false, is_crisp_admin: true,  is_sac: false },
-    { id: j1Id,    email: J1_EMAIL,    name: 'CE J1',    year: 'first',  batch: 'PGP 2025-27', section: 'B', roll: 'CEJ001', can_host_gd: false, can_host_pi: false, is_mentor: false, is_committee: false, is_crisp_admin: false, is_sac: false },
-    { id: j2Id,    email: J2_EMAIL,    name: 'CE J2',    year: 'first',  batch: 'PGP 2025-27', section: 'B', roll: 'CEJ002', can_host_gd: false, can_host_pi: false, is_mentor: false, is_committee: false, is_crisp_admin: false, is_sac: false },
-    { id: j3Id,    email: J3_EMAIL,    name: 'CE J3',    year: 'first',  batch: 'PGP 2025-27', section: 'B', roll: 'CEJ003', can_host_gd: false, can_host_pi: false, is_mentor: false, is_committee: false, is_crisp_admin: false, is_sac: false },
+    { id: hostId,  email: HOST_EMAIL,  name: 'CE Host',  year: 'second', batch: 'PGP 2024-26', section: 'A', roll: 'CEHOST', can_host_gd: true,  can_host_pi: false, is_crisp: false, is_sac: false },
+    { id: adminId, email: ADMIN_EMAIL, name: 'CE Admin', year: 'second', batch: 'PGP 2024-26', section: 'A', roll: 'CEADMN', can_host_gd: false, can_host_pi: false, is_crisp: true,  is_sac: false },
+    { id: j1Id,    email: J1_EMAIL,    name: 'CE J1',    year: 'first',  batch: 'PGP 2025-27', section: 'B', roll: 'CEJ001', can_host_gd: false, can_host_pi: false, is_crisp: false, is_sac: false },
+    { id: j2Id,    email: J2_EMAIL,    name: 'CE J2',    year: 'first',  batch: 'PGP 2025-27', section: 'B', roll: 'CEJ002', can_host_gd: false, can_host_pi: false, is_crisp: false, is_sac: false },
+    { id: j3Id,    email: J3_EMAIL,    name: 'CE J3',    year: 'first',  batch: 'PGP 2025-27', section: 'B', roll: 'CEJ003', can_host_gd: false, can_host_pi: false, is_crisp: false, is_sac: false },
   ])
 
   const { data: room } = await adminSb

@@ -58,7 +58,7 @@ export default async function PublicProfilePage({
 
   const { data: viewer } = await supabase
     .from('profiles')
-    .select('is_committee, is_crisp_admin, is_sac, is_mentor')
+    .select('is_crisp, is_sac, can_host_gd, can_host_pi')
     .eq('id', user.id)
     .single()
 
@@ -237,10 +237,10 @@ export default async function PublicProfilePage({
       </div>
 
       <BottomNav
-        isAdmin={!!(viewer?.is_crisp_admin || viewer?.is_sac)}
-        isMentor={!!viewer?.is_mentor}
-        isSenior={!!viewer?.is_mentor}
-        isCommittee={!!(viewer?.is_committee || viewer?.is_crisp_admin || viewer?.is_sac)}
+        isAdmin={!!(viewer?.is_crisp || viewer?.is_sac)}
+        isSenior={!!(viewer?.can_host_gd || viewer?.can_host_pi)}
+        isCrisp={!!viewer?.is_crisp}
+        isSac={!!viewer?.is_sac}
       />
     </div>
   )

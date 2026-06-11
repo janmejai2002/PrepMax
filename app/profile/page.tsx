@@ -10,9 +10,7 @@ import { SCORE_DIMS, SCORE_DIM_LABELS } from '@/lib/types'
 const FLAG_LABELS: [key: string, label: string][] = [
   ['can_host_gd', 'GD Host'],
   ['can_host_pi', 'PI Host'],
-  ['is_mentor', 'Mentor'],
-  ['is_committee', 'Committee'],
-  ['is_crisp_admin', 'CRISP Admin'],
+  ['is_crisp', 'CRISP'],
   ['is_sac', 'SAC'],
 ]
 
@@ -214,10 +212,10 @@ export default async function ProfilePage() {
         </div>
       </div>
       <BottomNav
-        isAdmin={!!(profile.is_crisp_admin || profile.is_sac)}
-        isMentor={!!profile.is_mentor}
+        isAdmin={!!(profile.is_crisp || profile.is_sac)}
         isSenior={!!(profile.can_host_gd || profile.can_host_pi)}
-        isCommittee={!!(profile.is_committee || profile.is_crisp_admin || profile.is_sac)}
+        isCrisp={!!profile.is_crisp}
+        isSac={!!profile.is_sac}
       />
     </div>
   )

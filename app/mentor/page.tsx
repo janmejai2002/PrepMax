@@ -47,29 +47,28 @@ export default async function MentorPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('is_mentor, is_crisp_admin, is_sac, name')
+    .select('is_crisp, is_sac, name')
     .eq('id', user.id)
     .single()
 
-  if (!profile?.is_mentor && !profile?.is_crisp_admin && !profile?.is_sac) {
+  if (!profile?.is_crisp && !profile?.is_sac) {
     redirect('/')
   }
 
-  // Get mentees — either assigned juniors or all first-years for admin
+  // CRISP+SAC admins see all juniors; plain CRISP members see only their assigned juniors
   let juniorsQuery = supabase
     .from('junior_profile_360')
     .select('*')
     .order('name')
 
-  if (!profile.is_crisp_admin && !profile.is_sac) {
-    // Mentor sees only their assigned juniors
+  if (!profile.is_sac) {
     juniorsQuery = juniorsQuery.eq('mentor_id', user.id)
   }
 
   const { data: juniors } = await juniorsQuery.limit(100)
   const rows: Junior360Row[] = (juniors ?? []) as Junior360Row[]
 
-  const isAdmin = !!(profile.is_crisp_admin || profile.is_sac)
+  const isAdmin = !!(profile.is_crisp || profile.is_sac)
 
   return (
     <div className="min-h-screen bg-background pb-nav">
@@ -185,7 +184,7 @@ export default async function MentorPage() {
           </div>
         )}
       </div>
-      <BottomNav isAdmin={isAdmin} isSenior={true} />
+      <BottomNav isAdmin={isAdmin} isSenior isCrisp={!!profile.is_crisp} />
     </div>
   )
 }

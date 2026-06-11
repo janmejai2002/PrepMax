@@ -1,63 +1,66 @@
 /**
- * Unit tests for committee view-gating logic.
+ * Unit tests for CRISP/SAC view-gating logic.
  * Documents the exact flag combinations that trigger redirects in each server page.
  * Pure logic — no DB, no auth, no network.
+ *
+ * New 4-role model (after migration 024):
+ *   JUNIOR          year=first,  is_crisp=false, is_sac=false
+ *   SENIOR          year=second, is_crisp=false, is_sac=false
+ *   SENIOR+CRISP    year=second, is_crisp=true,  is_sac=false
+ *   SAC             year=null,   is_crisp=false, is_sac=true
  */
 import { describe, it, expect } from 'vitest'
 import { isCommitteeEmail, isSacEmail, isCrispEmail } from '../lib/email-role'
 
-// Mirrors the inline check used in every gated server page:
-//   if (profile.is_committee || profile.is_crisp_admin || profile.is_sac) redirect('/knowledge')
-function isCommitteeAccount(p: { is_committee: boolean; is_crisp_admin: boolean; is_sac: boolean }): boolean {
-  return p.is_committee || p.is_crisp_admin || p.is_sac
+// Mirrors the check used in gated server pages:
+//   if (profile.is_crisp || profile.is_sac) redirect('/knowledge')
+function isCrispOrSac(p: { is_crisp: boolean; is_sac: boolean }): boolean {
+  return p.is_crisp || p.is_sac
 }
 
-describe('committee view gating — flag combinations', () => {
-  it('shared CRISP login (crisp@xlri.ac.in) is gated', () => {
-    // Seed flags for crisp@xlri.ac.in
-    expect(isCommitteeAccount({ is_committee: true, is_crisp_admin: false, is_sac: false })).toBe(true)
+describe('CRISP/SAC view gating — flag combinations', () => {
+  it('CRISP member is gated from requests/slots creation pages', () => {
+    expect(isCrispOrSac({ is_crisp: true, is_sac: false })).toBe(true)
   })
 
-  it('SAC login (sacdelhi@xlri.ac.in) is gated', () => {
-    // SAC has both is_committee + is_sac
-    expect(isCommitteeAccount({ is_committee: true, is_crisp_admin: false, is_sac: true })).toBe(true)
-  })
-
-  it('CRISP admin account is gated', () => {
-    expect(isCommitteeAccount({ is_committee: true, is_crisp_admin: true, is_sac: false })).toBe(true)
-  })
-
-  it('is_crisp_admin alone (without is_committee) is gated', () => {
-    expect(isCommitteeAccount({ is_committee: false, is_crisp_admin: true, is_sac: false })).toBe(true)
-  })
-
-  it('is_sac alone (without is_committee) is gated', () => {
-    expect(isCommitteeAccount({ is_committee: false, is_crisp_admin: false, is_sac: true })).toBe(true)
+  it('SAC login is gated from requests/slots creation pages', () => {
+    expect(isCrispOrSac({ is_crisp: false, is_sac: true })).toBe(true)
   })
 
   it('junior student is NOT gated', () => {
-    expect(isCommitteeAccount({ is_committee: false, is_crisp_admin: false, is_sac: false })).toBe(false)
+    expect(isCrispOrSac({ is_crisp: false, is_sac: false })).toBe(false)
   })
 
-  it('senior student (can_host_gd/pi) is NOT gated', () => {
-    // Even a senior with hosting rights but no committee flag passes through
-    expect(isCommitteeAccount({ is_committee: false, is_crisp_admin: false, is_sac: false })).toBe(false)
-  })
-
-  it('b25 student who sits on CRISP (is_crisp_member only) is NOT gated', () => {
-    // is_crisp_member = student on the committee; is_committee = shared account login
-    // Students retain full app access — only shared logins are restricted
-    expect(isCommitteeAccount({ is_committee: false, is_crisp_admin: false, is_sac: false })).toBe(false)
+  it('regular senior (can_host) is NOT gated', () => {
+    expect(isCrispOrSac({ is_crisp: false, is_sac: false })).toBe(false)
   })
 })
 
-describe('SAC-specific: notify CRISP capability', () => {
-  it('SAC account can trigger notify (is_sac=true)', () => {
-    expect({ is_committee: true, is_crisp_admin: false, is_sac: true }.is_sac).toBe(true)
+describe('CRISP admin pages — is_crisp gates admin routes', () => {
+  it('CRISP member can access /admin/rooms, /admin/stats, /admin/roles', () => {
+    const profile = { is_crisp: true, is_sac: false }
+    expect(profile.is_crisp || profile.is_sac).toBe(true)
   })
 
-  it('plain CRISP account cannot trigger notify (is_sac=false)', () => {
-    expect({ is_committee: true, is_crisp_admin: false, is_sac: false }.is_sac).toBe(false)
+  it('SAC can access /admin/rooms but not crisp-only routes', () => {
+    const profile = { is_crisp: false, is_sac: true }
+    expect(profile.is_crisp || profile.is_sac).toBe(true) // rooms allowed
+    expect(profile.is_crisp).toBe(false)                  // crisp-only blocked
+  })
+
+  it('junior cannot access any admin page', () => {
+    const profile = { is_crisp: false, is_sac: false }
+    expect(profile.is_crisp || profile.is_sac).toBe(false)
+  })
+})
+
+describe('SAC-specific capability', () => {
+  it('SAC account has is_sac=true', () => {
+    expect({ is_crisp: false, is_sac: true }.is_sac).toBe(true)
+  })
+
+  it('CRISP member has is_sac=false', () => {
+    expect({ is_crisp: true, is_sac: false }.is_sac).toBe(false)
   })
 })
 

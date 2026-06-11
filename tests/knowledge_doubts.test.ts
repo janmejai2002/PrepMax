@@ -66,20 +66,20 @@ beforeAll(async () => {
     {
       id: commId, email: COMM_EMAIL, name: 'KD Committee',
       year: 'second', batch: 'PGP 2024', section: 'A', roll: 'KDC001',
-      is_committee: true, is_crisp_admin: false, is_sac: false,
-      can_host_gd: false, can_host_pi: false, is_mentor: false,
+      is_crisp: true, is_sac: false,
+      can_host_gd: false, can_host_pi: false,
     },
     {
       id: juniorId, email: JUNIOR_EMAIL, name: 'KD Junior',
       year: 'first', batch: 'PGP 2026', section: 'B', roll: 'KDJ001',
-      is_committee: false, is_crisp_admin: false, is_sac: false,
-      can_host_gd: false, can_host_pi: false, is_mentor: false,
+      is_crisp: false, is_sac: false,
+      can_host_gd: false, can_host_pi: false,
     },
     {
       id: seniorId, email: SENIOR_EMAIL, name: 'KD Senior',
       year: 'second', batch: 'PGP 2024', section: 'C', roll: 'KDS001',
-      is_committee: false, is_crisp_admin: false, is_sac: false,
-      can_host_gd: true, can_host_pi: false, is_mentor: false,
+      is_crisp: false, is_sac: false,
+      can_host_gd: true, can_host_pi: false,
     },
   ])
 

@@ -53,11 +53,11 @@ beforeAll(async () => {
   j4Id   = await upsertUser(J4_EMAIL, PASSWORD)
 
   await adminSb.from('profiles').upsert([
-    { id: hostId, email: HOST_EMAIL, name: 'LT Host',    year: 'second', batch: 'PGP 2024-26', section: 'A', roll: 'LTHOST', can_host_gd: true,  can_host_pi: false, is_mentor: false, is_committee: false, is_crisp_admin: false, is_sac: false },
-    { id: j1Id,   email: J1_EMAIL,   name: 'LT Junior1', year: 'first',  batch: 'PGP 2025-27', section: 'B', roll: 'LTJ001', can_host_gd: false, can_host_pi: false, is_mentor: false, is_committee: false, is_crisp_admin: false, is_sac: false },
-    { id: j2Id,   email: J2_EMAIL,   name: 'LT Junior2', year: 'first',  batch: 'PGP 2025-27', section: 'B', roll: 'LTJ002', can_host_gd: false, can_host_pi: false, is_mentor: false, is_committee: false, is_crisp_admin: false, is_sac: false },
-    { id: j3Id,   email: J3_EMAIL,   name: 'LT Junior3', year: 'first',  batch: 'PGP 2025-27', section: 'B', roll: 'LTJ003', can_host_gd: false, can_host_pi: false, is_mentor: false, is_committee: false, is_crisp_admin: false, is_sac: false },
-    { id: j4Id,   email: J4_EMAIL,   name: 'LT Junior4', year: 'first',  batch: 'PGP 2025-27', section: 'B', roll: 'LTJ004', can_host_gd: false, can_host_pi: false, is_mentor: false, is_committee: false, is_crisp_admin: false, is_sac: false },
+    { id: hostId, email: HOST_EMAIL, name: 'LT Host',    year: 'second', batch: 'PGP 2024-26', section: 'A', roll: 'LTHOST', can_host_gd: true,  can_host_pi: false, is_crisp: false, is_sac: false },
+    { id: j1Id,   email: J1_EMAIL,   name: 'LT Junior1', year: 'first',  batch: 'PGP 2025-27', section: 'B', roll: 'LTJ001', can_host_gd: false, can_host_pi: false, is_crisp: false, is_sac: false },
+    { id: j2Id,   email: J2_EMAIL,   name: 'LT Junior2', year: 'first',  batch: 'PGP 2025-27', section: 'B', roll: 'LTJ002', can_host_gd: false, can_host_pi: false, is_crisp: false, is_sac: false },
+    { id: j3Id,   email: J3_EMAIL,   name: 'LT Junior3', year: 'first',  batch: 'PGP 2025-27', section: 'B', roll: 'LTJ003', can_host_gd: false, can_host_pi: false, is_crisp: false, is_sac: false },
+    { id: j4Id,   email: J4_EMAIL,   name: 'LT Junior4', year: 'first',  batch: 'PGP 2025-27', section: 'B', roll: 'LTJ004', can_host_gd: false, can_host_pi: false, is_crisp: false, is_sac: false },
   ])
 
   const { data: room } = await adminSb

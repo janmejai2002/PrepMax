@@ -43,7 +43,7 @@ async function makeUser(email: string): Promise<string> {
   await adminSb.from('profiles').upsert({
     id: uid, email, name: email.split('@')[0],
     year: 'second', can_host_gd: true, can_host_pi: true,
-    is_mentor: false, is_committee: false, is_crisp_admin: false, is_sac: false,
+    is_crisp: false, is_sac: false,
   }, { onConflict: 'id' })
   return uid
 }

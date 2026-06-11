@@ -44,7 +44,7 @@ async function makeUser(email: string, canHost = false): Promise<string> {
     id: uid, email, name: email.split('@')[0],
     year: canHost ? 'second' : 'first',
     can_host_gd: canHost, can_host_pi: canHost,
-    is_mentor: false, is_committee: false, is_crisp_admin: false, is_sac: false,
+    is_crisp: false, is_sac: false,
     whatsapp: canHost ? '919876543210' : '919988776655',
     phone:    canHost ? '9876543210' : '9988776655',
   }, { onConflict: 'id' })

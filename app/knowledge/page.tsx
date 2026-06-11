@@ -36,7 +36,7 @@ export default async function KnowledgePage() {
   const [{ data: profile }, posts] = await Promise.all([
     supabase
       .from('profiles')
-      .select('is_committee, is_crisp_admin, is_sac')
+      .select('is_crisp, is_sac')
       .eq('id', user.id)
       .single(),
     getCachedPosts(),
@@ -47,14 +47,14 @@ export default async function KnowledgePage() {
     author_name: (p.profiles as { name: string } | null)?.name ?? 'Unknown',
   }))
 
-  const canPost = !!(profile?.is_committee || profile?.is_crisp_admin || profile?.is_sac)
-  const isAdmin = !!(profile?.is_crisp_admin || profile?.is_sac)
-  const isCommittee = !!(profile?.is_committee || profile?.is_crisp_admin || profile?.is_sac)
+  const isCrisp = !!profile?.is_crisp
+  const canPost = isCrisp || !!profile?.is_sac
+  const isAdmin = isCrisp || !!profile?.is_sac
 
   return (
     <div className="min-h-screen bg-background pb-nav">
       <KnowledgeFeedClient initialPosts={typedPosts} canPost={canPost} />
-      <BottomNav isAdmin={isAdmin} isCommittee={isCommittee} />
+      <BottomNav isAdmin={isAdmin} isCrisp={isCrisp} />
     </div>
   )
 }

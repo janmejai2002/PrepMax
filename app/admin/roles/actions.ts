@@ -6,10 +6,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 export interface RoleFlags {
   can_host_gd: boolean
   can_host_pi: boolean
-  is_mentor: boolean
-  is_crisp_member: boolean
-  is_committee: boolean
-  is_crisp_admin: boolean
+  is_crisp: boolean
   is_sac: boolean
 }
 
@@ -23,12 +20,12 @@ export async function updateUserFlags(
 
   const { data: caller } = await supabase
     .from('profiles')
-    .select('is_crisp_admin, is_sac')
+    .select('is_crisp, is_sac')
     .eq('id', user.id)
     .single()
 
-  if (!caller?.is_crisp_admin && !caller?.is_sac) {
-    return { error: 'Forbidden — requires CRISP admin or SAC role' }
+  if (!caller?.is_crisp && !caller?.is_sac) {
+    return { error: 'Forbidden — requires CRISP or SAC role' }
   }
 
   const service = createServiceClient()
@@ -49,10 +46,7 @@ export interface ProfileRow {
   batch: string | null
   can_host_gd: boolean
   can_host_pi: boolean
-  is_mentor: boolean
-  is_crisp_member: boolean
-  is_committee: boolean
-  is_crisp_admin: boolean
+  is_crisp: boolean
   is_sac: boolean
 }
 
@@ -63,16 +57,16 @@ export async function listAllProfiles(): Promise<ProfileRow[]> {
 
   const { data: caller } = await supabase
     .from('profiles')
-    .select('is_crisp_admin, is_sac')
+    .select('is_crisp, is_sac')
     .eq('id', user.id)
     .single()
 
-  if (!caller?.is_crisp_admin && !caller?.is_sac) return []
+  if (!caller?.is_crisp && !caller?.is_sac) return []
 
   const service = createServiceClient()
   const { data } = await service
     .from('profiles')
-    .select('id, name, email, year, batch, can_host_gd, can_host_pi, is_mentor, is_crisp_member, is_committee, is_crisp_admin, is_sac')
+    .select('id, name, email, year, batch, can_host_gd, can_host_pi, is_crisp, is_sac')
     .order('year', { ascending: false, nullsFirst: false })
     .order('name')
     .limit(500)

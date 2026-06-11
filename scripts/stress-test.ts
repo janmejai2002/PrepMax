@@ -87,9 +87,7 @@ async function main() {
       roll: `STRESS${String(i).padStart(3, '0')}`,
       can_host_gd: false,
       can_host_pi: false,
-      is_mentor: false,
-      is_committee: false,
-      is_crisp_admin: false,
+      is_crisp: false,
       is_sac: false,
     }))
   )

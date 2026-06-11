@@ -8,7 +8,6 @@ import {
   MessageCircleQuestion,
   CircleUser,
   ShieldCheck,
-  UserCheck,
   ClipboardList,
   Building2,
   Eye,
@@ -19,18 +18,14 @@ type Tab = { href: string; label: string; icon: React.FC<{ className?: string; s
 
 export function BottomNav({
   isAdmin = false,
-  isMentor = false,
   isSenior = false,
-  isCommittee = false,
   isSac = false,
-  isCrispMember = false,
+  isCrisp = false,
 }: {
   isAdmin?: boolean
-  isMentor?: boolean
   isSenior?: boolean
-  isCommittee?: boolean
   isSac?: boolean
-  isCrispMember?: boolean
+  isCrisp?: boolean
 }) {
   const pathname = usePathname()
   const requestsHref = isSenior ? '/requests' : '/my-requests'
@@ -38,12 +33,12 @@ export function BottomNav({
   let tabs: Tab[]
 
   if (isSac) {
-    // SAC shared account: Rooms only — no feed, no knowledge, no doubts
+    // SAC: Rooms only
     tabs = [
       { href: '/admin/rooms', label: 'Rooms', icon: Building2 },
     ]
-  } else if (isCrispMember) {
-    // CRISP member: full senior nav + Rooms tab + Mentee Monitor
+  } else if (isCrisp) {
+    // CRISP member: full senior nav + Rooms + Monitor
     tabs = [
       { href: '/', label: 'Slots', icon: CalendarRange },
       { href: '/requests', label: 'Requests', icon: ClipboardList },
@@ -53,17 +48,8 @@ export function BottomNav({
       { href: '/crisp-monitor', label: 'Monitor', icon: Eye },
       { href: '/profile', label: 'Profile', icon: CircleUser },
     ]
-  } else if (isCommittee) {
-    // @xlri.ac.in shared accounts: Feed (read-only) + Knowledge + Doubts + optional Admin + Profile.
-    tabs = [
-      { href: '/', label: 'Feed', icon: CalendarRange },
-      { href: '/knowledge', label: 'Knowledge', icon: BookOpen },
-      { href: '/doubts', label: 'Doubts', icon: MessageCircleQuestion },
-      ...(isAdmin ? [{ href: '/admin/stats', label: 'Admin', icon: ShieldCheck } as Tab] : []),
-      { href: '/profile', label: 'Profile', icon: CircleUser },
-    ]
   } else {
-    // 5-tab base: Slots · Requests · Knowledge · Doubts · Profile
+    // Junior / Senior: Slots · Requests · Knowledge · Doubts · [Admin] · Profile
     const coreTabs: Tab[] = [
       { href: '/', label: 'Slots', icon: CalendarRange },
       { href: requestsHref, label: 'Requests', icon: ClipboardList },
@@ -73,8 +59,6 @@ export function BottomNav({
     const profileTab: Tab = { href: '/profile', label: 'Profile', icon: CircleUser }
     if (isAdmin) {
       tabs = [...coreTabs, { href: '/admin/stats', label: 'Admin', icon: ShieldCheck }, profileTab]
-    } else if (isMentor) {
-      tabs = [...coreTabs, { href: '/mentor', label: 'Mentees', icon: UserCheck }, profileTab]
     } else {
       tabs = [...coreTabs, profileTab]
     }

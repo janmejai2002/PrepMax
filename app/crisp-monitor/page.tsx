@@ -13,11 +13,11 @@ export default async function MenteeMonitorPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('name, is_crisp_member, is_crisp_admin')
+    .select('name, is_crisp')
     .eq('id', user.id)
     .single()
 
-  if (!profile?.is_crisp_member && !profile?.is_crisp_admin) redirect('/')
+  if (!profile?.is_crisp) redirect('/')
 
   const { data: result } = await supabase.rpc('get_all_juniors')
 
@@ -44,7 +44,7 @@ export default async function MenteeMonitorPage() {
           myId={user.id}
         />
       </div>
-      <BottomNav isSenior isCrispMember />
+      <BottomNav isSenior isCrisp />
     </div>
   )
 }

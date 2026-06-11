@@ -21,7 +21,7 @@ export default async function SlotDetailPage({ params }: Props) {
   const [{ data: profile }, { data: detail, error }] = await Promise.all([
     supabase
       .from('profiles')
-      .select('name, can_host_gd, can_host_pi, is_crisp_admin, is_sac, is_mentor, is_crisp_member')
+      .select('name, can_host_gd, can_host_pi, is_crisp, is_sac')
       .eq('id', user.id)
       .single(),
     supabase.rpc('get_slot_detail', { p_slot_id: id }),
@@ -32,7 +32,7 @@ export default async function SlotDetailPage({ params }: Props) {
 
   const slot = detail as SlotDetail
   const isSenior = !!(profile.can_host_gd || profile.can_host_pi)
-  const isCrispMember = !!profile.is_crisp_member
+  const isCrisp = !!profile.is_crisp
 
   return (
     <div className="min-h-screen bg-background pb-nav">
@@ -56,11 +56,10 @@ export default async function SlotDetailPage({ params }: Props) {
         />
       </div>
       <BottomNav
-        isAdmin={!!(profile.is_crisp_admin || profile.is_sac)}
-        isMentor={!!profile.is_mentor}
+        isAdmin={isCrisp || !!profile.is_sac}
         isSenior={isSenior}
         isSac={!!profile.is_sac}
-        isCrispMember={isCrispMember}
+        isCrisp={isCrisp}
       />
     </div>
   )

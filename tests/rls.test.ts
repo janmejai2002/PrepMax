@@ -53,9 +53,7 @@ beforeAll(async () => {
       roll: 'RLSJ001',
       can_host_gd: false,
       can_host_pi: false,
-      is_mentor: false,
-      is_committee: false,
-      is_crisp_admin: false,
+      is_crisp: false,
       is_sac: false,
     },
     {
@@ -68,9 +66,7 @@ beforeAll(async () => {
       roll: 'RLSA001',
       can_host_gd: true,
       can_host_pi: true,
-      is_mentor: true,
-      is_committee: true,
-      is_crisp_admin: true,
+      is_crisp: true,
       is_sac: false,
     },
     {
@@ -83,9 +79,7 @@ beforeAll(async () => {
       roll: 'RLSS001',
       can_host_gd: false,
       can_host_pi: false,
-      is_mentor: false,
-      is_committee: false,
-      is_crisp_admin: false,
+      is_crisp: false,
       is_sac: true,
     },
   ])
@@ -179,17 +173,17 @@ describe('profiles — first-year user', () => {
   it('cannot update another user\'s capability flags', async () => {
     await juniorClient
       .from('profiles')
-      .update({ is_crisp_admin: false })
+      .update({ is_crisp: false })
       .eq('id', adminUserId)
 
     // Admin profile must remain untouched
     const { data: check } = await adminSb
       .from('profiles')
-      .select('is_crisp_admin')
+      .select('is_crisp')
       .eq('id', adminUserId)
       .single()
 
-    expect(check?.is_crisp_admin).toBe(true)
+    expect(check?.is_crisp).toBe(true)
   })
 })
 
@@ -234,7 +228,7 @@ describe('rooms — non-CRISP user', () => {
   })
 })
 
-// ── Test 4: SAC user (is_sac=true, is_crisp_admin=false) can manage rooms ─────
+// ── Test 4: SAC user (is_sac=true, is_crisp=false) can manage rooms ──────────
 describe('rooms — SAC user', () => {
   it('can toggle is_live (via can_manage_rooms)', async () => {
     const { error } = await sacClient

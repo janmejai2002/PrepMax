@@ -31,9 +31,8 @@ const TEST_ACCOUNTS = [
     whatsapp: '+91 9000000001',
     can_host_gd: false,
     can_host_pi: false,
-    is_mentor: false,
-    is_committee: false,
-    is_crisp_admin: false,
+    is_crisp: false,
+    is_sac: false,
   },
   {
     email: 'b25349@astra.xlri.ac.in',
@@ -46,9 +45,7 @@ const TEST_ACCOUNTS = [
     whatsapp: '+91 9000000002',
     can_host_gd: true,
     can_host_pi: true,
-    is_mentor: true,
-    is_committee: true,
-    is_crisp_admin: true,
+    is_crisp: true,
     is_sac: true,
   },
 ]
@@ -122,8 +119,7 @@ async function seedFakerProfiles(count: number) {
 
         const canHostGd = index < 12
         const canHostPi = index < 10
-        const isMentor = index < 3
-        const isCommittee = index < 2
+        const isCrisp = index < 2
 
         const id = await getOrCreateAuthUser(email)
         await supabase.from('profiles').upsert({
@@ -138,9 +134,8 @@ async function seedFakerProfiles(count: number) {
           roll,
           can_host_gd: canHostGd,
           can_host_pi: canHostPi,
-          is_mentor: isMentor,
-          is_committee: isCommittee,
-          is_crisp_admin: false,
+          is_crisp: isCrisp,
+          is_sac: false,
         })
         created++
       })

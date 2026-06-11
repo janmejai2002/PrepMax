@@ -18,7 +18,7 @@ export default async function HomePage() {
   const [profileRes, slotsRes, hostsRes, enrollRes] = await Promise.all([
     supabase
       .from('profiles')
-      .select('name, whatsapp, year, can_host_gd, can_host_pi, is_committee, is_crisp_admin, is_sac, is_mentor, is_crisp_member')
+      .select('name, whatsapp, year, can_host_gd, can_host_pi, is_crisp, is_sac')
       .eq('id', user.id)
       .single(),
     supabase
@@ -41,13 +41,12 @@ export default async function HomePage() {
   if (profile.is_sac) redirect('/admin/rooms')
 
   const isSenior = !!(profile.can_host_gd || profile.can_host_pi)
-  const isCrispMember = !!profile.is_crisp_member
+  const isCrisp = !!profile.is_crisp
 
   const capabilities: HostCapabilities = {
     canHostGd: !!profile.can_host_gd,
     canHostPi: !!profile.can_host_pi,
-    // CRISP members can also manage rooms (toggle live/offline)
-    canManageRooms: !!profile.is_crisp_admin || !!profile.is_sac || isCrispMember,
+    canManageRooms: isCrisp || !!profile.is_sac,
   }
   const canHost =
     capabilities.canHostGd || capabilities.canHostPi || capabilities.canManageRooms
@@ -95,12 +94,10 @@ export default async function HomePage() {
         judges={judges}
       />
       <BottomNav
-        isAdmin={!!(profile.is_crisp_admin || profile.is_sac)}
-        isMentor={!!profile.is_mentor}
+        isAdmin={isCrisp || !!profile.is_sac}
         isSenior={isSenior}
-        isCommittee={!!(profile.is_committee || profile.is_crisp_admin || profile.is_sac)}
         isSac={!!profile.is_sac}
-        isCrispMember={isCrispMember}
+        isCrisp={isCrisp}
       />
     </div>
   )

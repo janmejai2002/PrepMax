@@ -24,7 +24,7 @@ const PERSONAS: DevPersona[] = [
   },
   {
     label: 'Senior (host)',
-    description: 'Second-year (b25), can host GD + PI, is_mentor',
+    description: 'Second-year (b25), can host GD + PI',
     email: 'b25001@astra.xlri.ac.in',
     password: 'PrepMax@dev1',
     badge: 'bg-gd-soft text-gd',

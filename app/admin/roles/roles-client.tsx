@@ -7,13 +7,10 @@ import { cn } from '@/lib/utils'
 import { updateUserFlags, type ProfileRow, type RoleFlags } from './actions'
 
 const FLAG_DEFS: { key: keyof RoleFlags; label: string; color: string }[] = [
-  { key: 'can_host_gd',    label: 'GD Host',     color: 'bg-gd-soft text-gd' },
-  { key: 'can_host_pi',    label: 'PI Host',      color: 'bg-pi-soft text-pi' },
-  { key: 'is_mentor',      label: 'Mentor',       color: 'bg-success/15 text-success' },
-  { key: 'is_crisp_member',label: 'CRISP Mbr',    color: 'bg-secondary text-secondary-foreground' },
-  { key: 'is_committee',   label: 'Committee',    color: 'bg-amber-500/15 text-amber-600' },
-  { key: 'is_crisp_admin', label: 'CRISP Admin',  color: 'bg-destructive/15 text-destructive' },
-  { key: 'is_sac',         label: 'SAC',          color: 'bg-destructive/15 text-destructive' },
+  { key: 'can_host_gd', label: 'GD Host', color: 'bg-gd-soft text-gd' },
+  { key: 'can_host_pi', label: 'PI Host',  color: 'bg-pi-soft text-pi' },
+  { key: 'is_crisp',    label: 'CRISP',    color: 'bg-secondary text-secondary-foreground' },
+  { key: 'is_sac',      label: 'SAC',      color: 'bg-destructive/15 text-destructive' },
 ]
 
 function FlagChip({
@@ -46,11 +43,8 @@ function UserRow({ profile }: { profile: ProfileRow }) {
   const [flags, setFlags] = useState<RoleFlags>({
     can_host_gd: profile.can_host_gd,
     can_host_pi: profile.can_host_pi,
-    is_mentor: profile.is_mentor,
-    is_crisp_member: profile.is_crisp_member,
-    is_committee: profile.is_committee,
-    is_crisp_admin: profile.is_crisp_admin,
-    is_sac: profile.is_sac,
+    is_crisp:    profile.is_crisp,
+    is_sac:      profile.is_sac,
   })
   const [expanded, setExpanded] = useState(false)
   const [error, setError] = useState('')
@@ -63,7 +57,7 @@ function UserRow({ profile }: { profile: ProfileRow }) {
     startTransition(async () => {
       const result = await updateUserFlags(profile.id, { [key]: val })
       if (result.error) {
-        setFlags(flags) // revert
+        setFlags(flags)
         setError(result.error)
       }
     })

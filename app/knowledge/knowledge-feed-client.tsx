@@ -40,6 +40,14 @@ export function KnowledgeFeedClient({ initialPosts, canPost }: Props) {
   async function submitPost(e: React.FormEvent) {
     e.preventDefault()
     setFormErr('')
+    if (title.trim().length < 3) {
+      setFormErr('Title must be at least 3 characters.')
+      return
+    }
+    if (body.trim().length < 10) {
+      setFormErr('Content must be at least 10 characters.')
+      return
+    }
     setPosting(true)
     const { data, error } = await supabase.rpc('create_knowledge_post', {
       p_title: title.trim(),
@@ -50,7 +58,7 @@ export function KnowledgeFeedClient({ initialPosts, canPost }: Props) {
     })
     setPosting(false)
     if (error || data?.error) {
-      setFormErr(error?.message ?? data?.error ?? 'Failed to post')
+      setFormErr('Could not publish post — please try again.')
       return
     }
     // Reload fresh from server by adding optimistically
@@ -109,6 +117,7 @@ export function KnowledgeFeedClient({ initialPosts, canPost }: Props) {
             <Label htmlFor="kp-body">Content</Label>
             <Textarea id="kp-body" value={body} onChange={e => setBody(e.target.value)}
               placeholder="Share tips, frameworks, or insights…" required rows={5} />
+            <p className="text-[10px] text-muted-foreground">min 10 characters · {body.trim().length} typed</p>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="kp-func">Function (optional)</Label>

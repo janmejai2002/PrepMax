@@ -15,17 +15,16 @@ export default async function RoomsAdminPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('is_crisp_admin, is_sac, is_crisp_member')
+    .select('is_crisp, is_sac')
     .eq('id', user.id)
     .single()
 
-  // SAC, CRISP admin, and CRISP members all have room management access
-  const canManage = !!(profile?.is_crisp_admin || profile?.is_sac || profile?.is_crisp_member)
+  const canManage = !!(profile?.is_crisp || profile?.is_sac)
   if (!canManage) redirect('/')
 
   const isSac = !!profile?.is_sac
-  const isCrispMember = !!profile?.is_crisp_member
-  const isAdmin = !!(profile?.is_crisp_admin || profile?.is_sac)
+  const isCrisp = !!profile?.is_crisp
+  const isAdmin = !!(profile?.is_crisp || profile?.is_sac)
 
   const { data: rooms } = await supabase
     .from('rooms')
@@ -40,8 +39,8 @@ export default async function RoomsAdminPage() {
           <p className="text-sm text-muted-foreground">Toggle rooms live/offline and add new venues.</p>
         </div>
 
-        {/* Admin sub-nav: only for CRISP admin (not for SAC or plain CRISP members) */}
-        {isAdmin && !isSac && (
+        {/* Admin sub-nav: only for CRISP members (not for SAC) */}
+        {isCrisp && !isSac && (
           <div className="flex gap-2 flex-wrap">
             <span className="flex-1 rounded-xl border bg-card px-3 py-2 text-center text-xs font-medium">
               <Building2 className="h-3.5 w-3.5 inline mr-1" />
@@ -69,9 +68,8 @@ export default async function RoomsAdminPage() {
       </div>
       <BottomNav
         isAdmin={isAdmin}
-        isCommittee={isAdmin}
         isSac={isSac}
-        isCrispMember={isCrispMember}
+        isCrisp={isCrisp}
       />
     </div>
   )

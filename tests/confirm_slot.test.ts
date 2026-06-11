@@ -57,12 +57,12 @@ beforeAll(async () => {
 
   // j1 & j2 share mentor M (tests CC dedup); j3 has no mentor (tests null-free CC)
   await adminSb.from('profiles').upsert([
-    { id: hostId,   email: HOST_EMAIL,   name: 'CF Host',   year: 'second', batch: 'PGP 2024-26', section: 'A', roll: 'CFHOST', can_host_gd: true,  can_host_pi: false, is_mentor: false, is_committee: false, is_crisp_admin: false, is_sac: false, mentor_id: null },
-    { id: adminId,  email: ADMIN_EMAIL,  name: 'CF Admin',  year: 'second', batch: 'PGP 2024-26', section: 'A', roll: 'CFADMN', can_host_gd: false, can_host_pi: false, is_mentor: false, is_committee: false, is_crisp_admin: true,  is_sac: false, mentor_id: null },
-    { id: mentorId, email: MENTOR_EMAIL, name: 'CF Mentor', year: 'second', batch: 'PGP 2024-26', section: 'A', roll: 'CFMNTR', can_host_gd: false, can_host_pi: false, is_mentor: true,  is_committee: false, is_crisp_admin: false, is_sac: false, mentor_id: null },
-    { id: j1Id,     email: J1_EMAIL,     name: 'CF J1',     year: 'first',  batch: 'PGP 2025-27', section: 'B', roll: 'CFJ001', can_host_gd: false, can_host_pi: false, is_mentor: false, is_committee: false, is_crisp_admin: false, is_sac: false, mentor_id: mentorId },
-    { id: j2Id,     email: J2_EMAIL,     name: 'CF J2',     year: 'first',  batch: 'PGP 2025-27', section: 'B', roll: 'CFJ002', can_host_gd: false, can_host_pi: false, is_mentor: false, is_committee: false, is_crisp_admin: false, is_sac: false, mentor_id: mentorId },
-    { id: j3Id,     email: J3_EMAIL,     name: 'CF J3',     year: 'first',  batch: 'PGP 2025-27', section: 'B', roll: 'CFJ003', can_host_gd: false, can_host_pi: false, is_mentor: false, is_committee: false, is_crisp_admin: false, is_sac: false, mentor_id: null },
+    { id: hostId,   email: HOST_EMAIL,   name: 'CF Host',   year: 'second', batch: 'PGP 2024-26', section: 'A', roll: 'CFHOST', can_host_gd: true,  can_host_pi: false, is_crisp: false, is_sac: false, mentor_id: null },
+    { id: adminId,  email: ADMIN_EMAIL,  name: 'CF Admin',  year: 'second', batch: 'PGP 2024-26', section: 'A', roll: 'CFADMN', can_host_gd: false, can_host_pi: false, is_crisp: true,  is_sac: false, mentor_id: null },
+    { id: mentorId, email: MENTOR_EMAIL, name: 'CF Mentor', year: 'second', batch: 'PGP 2024-26', section: 'A', roll: 'CFMNTR', can_host_gd: false, can_host_pi: false, is_crisp: true,  is_sac: false, mentor_id: null },
+    { id: j1Id,     email: J1_EMAIL,     name: 'CF J1',     year: 'first',  batch: 'PGP 2025-27', section: 'B', roll: 'CFJ001', can_host_gd: false, can_host_pi: false, is_crisp: false, is_sac: false, mentor_id: mentorId },
+    { id: j2Id,     email: J2_EMAIL,     name: 'CF J2',     year: 'first',  batch: 'PGP 2025-27', section: 'B', roll: 'CFJ002', can_host_gd: false, can_host_pi: false, is_crisp: false, is_sac: false, mentor_id: mentorId },
+    { id: j3Id,     email: J3_EMAIL,     name: 'CF J3',     year: 'first',  batch: 'PGP 2025-27', section: 'B', roll: 'CFJ003', can_host_gd: false, can_host_pi: false, is_crisp: false, is_sac: false, mentor_id: null },
   ])
 
   const { data: room } = await adminSb

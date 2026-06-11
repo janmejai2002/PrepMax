@@ -48,6 +48,10 @@ export function DoubtsFeedClient({ initialDoubts, myUserId }: Props) {
   async function submitQuestion(e: React.FormEvent) {
     e.preventDefault()
     setAskErr('')
+    if (question.trim().length < 5) {
+      setAskErr('Question must be at least 5 characters.')
+      return
+    }
     setAsking(true)
     const { data, error } = await supabase.rpc('post_doubt', {
       p_question: question.trim(),
@@ -55,7 +59,7 @@ export function DoubtsFeedClient({ initialDoubts, myUserId }: Props) {
     })
     setAsking(false)
     if (error || data?.error) {
-      setAskErr(error?.message ?? data?.error ?? 'Failed to post')
+      setAskErr('Could not post question — please try again.')
       return
     }
     const newDoubt: Doubt = {
@@ -193,7 +197,7 @@ export function DoubtsFeedClient({ initialDoubts, myUserId }: Props) {
               rows={3}
               maxLength={500}
             />
-            <p className="text-[10px] text-muted-foreground text-right">{question.length}/500</p>
+            <p className="text-[10px] text-muted-foreground text-right">min 5 characters · {question.trim().length}/500</p>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="q-func">Function (optional)</Label>

@@ -64,11 +64,11 @@ export default async function AdminStatsPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('is_crisp_admin, is_sac')
+    .select('is_crisp, is_sac')
     .eq('id', user.id)
     .single()
 
-  if (!profile?.is_crisp_admin && !profile?.is_sac) redirect('/')
+  if (!profile?.is_crisp && !profile?.is_sac) redirect('/')
 
   const [{ data: statsData }, { data: roomsData }] = await Promise.all([
     supabase.from('daily_stats').select('*').single(),
@@ -169,7 +169,7 @@ export default async function AdminStatsPage() {
           <RoomNowClient initialRooms={rooms} />
         </div>
       </div>
-      <BottomNav isAdmin isCommittee />
+      <BottomNav isAdmin isCrisp />
     </div>
   )
 }
