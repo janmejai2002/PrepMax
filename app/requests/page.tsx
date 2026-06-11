@@ -22,12 +22,12 @@ export default async function RequestsPage() {
 
   if (!profile) redirect('/onboarding')
 
+  // Committee accounts see only the knowledge/post view
+  if (profile.is_committee || profile.is_crisp_admin || profile.is_sac) redirect('/knowledge')
+
   const isSenior =
     profile.can_host_gd ||
-    profile.can_host_pi ||
-    profile.is_committee ||
-    profile.is_crisp_admin ||
-    profile.is_sac
+    profile.can_host_pi
 
   // Juniors can't browse the anonymous senior feed — redirect to their own page
   if (!isSenior) redirect('/my-requests')

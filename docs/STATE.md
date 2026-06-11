@@ -5,7 +5,7 @@
 ---
 
 ## Current Phase
-**Phase 6 — Complete + Attendance Hardened + Junior-Request Flow + Navigation Performance. All phases 1-6 shipped. 132/132 tests green.**
+**Phase 6 — Complete + Attendance Hardened + Junior-Request Flow + Navigation Performance + Committee Gating + SAC Notify. All phases 1-6 shipped. 145/145 tests green.**
 
 ## Status
 
@@ -55,8 +55,11 @@
 | dev seed users | ✅ Done | 4 test accounts via `npx tsx scripts/seed-dev-users.ts` |
 | Vercel deploy | ✅ Done | https://prep-max-alpha.vercel.app |
 | GitHub repo | ✅ Done | https://github.com/janmejai2002/PrepMax |
-| Tests | ✅ Done | 132/132 passing (20 new slot-request tests; fileParallelism=false prevents auth rate-limit flakes) |
+| Tests | ✅ Done | 145/145 passing (13 new committee-gating tests; fileParallelism=false prevents auth rate-limit flakes) |
 | lib/email-role.ts | ✅ Done | inferYearFromEmail + isCommitteeEmail + isSacEmail + isCrispEmail |
+| Committee gating | ✅ Done | @xlri.ac.in accounts redirected from /, /requests, /my-requests, /doubts → /knowledge |
+| SAC notify button | ✅ Done | "Notify CRISP" button on /admin/rooms (SAC-only); server action inserts outbox events for all is_committee members |
+| BottomNav gating | ✅ Done | isCommittee prop: committee sees Knowledge+Profile only; committee admin adds Admin tab |
 | lib/supabase/service.ts | ✅ Done | Service-role client for cached server queries (outside request scope) |
 | Navigation perf | ✅ Done | loading.tsx on 8 routes + Promise.all parallel queries + knowledge 60s cache; ~5s→instant skeleton |
 
@@ -135,3 +138,4 @@ Magic link works right now without any extra config.
 | 2026-06-11 | Session 12: Attendance hardening (migrations 019+020). THREAT MODEL: junior cannot self-check-in. NEW: generate_checkin_token (HMAC-SHA256, 90s TTL, per-junior) + mark_attended_by_token (host-only, HMAC verify + replay prevention) + mark_attended_direct (host taps roster). check_in() disabled. /myqr/[slotId] junior QR page. Cockpit "Mark present" buttons. 19 fraud-path tests. 112/112 tests. |
 | 2026-06-11 | Session 13: Junior-request flow (migration 021). slot_requests + interests tables. 7 RPCs: create/cancel_slot_request, express/retract_interest, confirm_match, get_open_requests, get_my_requests. /requests senior feed (anonymous, "I'm available" toggle). /my-requests junior page (post form, interested seniors list, WhatsApp intro, confirm match). BottomNav updated with Requests tab (seniors→/requests, juniors→/my-requests). fileParallelism=false in vitest.config. 20 new tests. 132/132 tests. |
 | 2026-06-11 | Session 14: Navigation perf. Root causes: no loading.tsx on 8 routes (blank white screen), serial Supabase waterfall queries (3× round-trips), knowledge posts re-fetched every request. Fixes: loading.tsx for 8 routes (skeleton appears <50ms), Promise.all parallel queries on 5 pages, unstable_cache(60s) on knowledge posts via service client. lib/supabase/service.ts. Before: ~5s blank screen. After: instant skeleton, data in ~1-2s. 132/132 tests green. |
+| 2026-06-11 | Session 15: Committee gating audit + SAC notify. Gated /, /requests, /my-requests, /doubts from @xlri.ac.in accounts → redirect /knowledge. BottomNav isCommittee prop: committee sees Knowledge+Profile; +Admin tab for crisp_admin/sac. SAC "Notify CRISP" button on /admin/rooms (server action app/admin/rooms/actions.ts → outbox). Fixed pre-existing formatSlotTime(x,x) TS bug in profile/[id]. 13 new committee-gating unit tests. 145/145 tests. |

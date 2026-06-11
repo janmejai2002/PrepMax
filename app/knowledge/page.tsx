@@ -49,11 +49,12 @@ export default async function KnowledgePage() {
 
   const canPost = !!(profile?.is_committee || profile?.is_crisp_admin || profile?.is_sac)
   const isAdmin = !!(profile?.is_crisp_admin || profile?.is_sac)
+  const isCommittee = !!(profile?.is_committee || profile?.is_crisp_admin || profile?.is_sac)
 
   return (
     <div className="min-h-screen bg-background pb-nav">
       <KnowledgeFeedClient initialPosts={typedPosts} canPost={canPost} />
-      <BottomNav isAdmin={isAdmin} isSenior={!!(profile?.is_committee || profile?.is_crisp_admin || profile?.is_sac)} />
+      <BottomNav isAdmin={isAdmin} isCommittee={isCommittee} />
     </div>
   )
 }

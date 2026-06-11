@@ -14,7 +14,7 @@ export default async function DoubtsPage() {
   const [{ data: profile }, { data: doubts }] = await Promise.all([
     supabase
       .from('profiles')
-      .select('is_crisp_admin, is_sac')
+      .select('is_committee, is_crisp_admin, is_sac')
       .eq('id', user.id)
       .single(),
     supabase
@@ -23,6 +23,9 @@ export default async function DoubtsPage() {
       .order('created_at', { ascending: false })
       .limit(50),
   ])
+
+  // Committee accounts see only the knowledge/post view
+  if (profile?.is_committee || profile?.is_crisp_admin || profile?.is_sac) redirect('/knowledge')
 
   const isAdmin = !!(profile?.is_crisp_admin || profile?.is_sac)
 

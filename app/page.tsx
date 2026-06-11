@@ -14,11 +14,14 @@ export default async function HomePage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('name, whatsapp, year, can_host_gd, can_host_pi, is_crisp_admin, is_sac, is_mentor')
+    .select('name, whatsapp, year, can_host_gd, can_host_pi, is_committee, is_crisp_admin, is_sac, is_mentor')
     .eq('id', user.id)
     .single()
 
   if (!profile) redirect('/onboarding')
+
+  // Committee accounts (@xlri.ac.in) see only the knowledge/post view
+  if (profile.is_committee || profile.is_crisp_admin || profile.is_sac) redirect('/knowledge')
 
   const capabilities: HostCapabilities = {
     canHostGd: !!profile.can_host_gd,

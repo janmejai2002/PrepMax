@@ -34,9 +34,9 @@ export default async function RoomsAdminPage() {
             Toggle rooms live/offline and add new venues.
           </p>
         </div>
-        <RoomsClient initialRooms={rooms ?? []} />
+        <RoomsClient initialRooms={rooms ?? []} isSac={!!profile?.is_sac} />
       </div>
-      <BottomNav isAdmin />
+      <BottomNav isAdmin isCommittee />
     </div>
   )
 }

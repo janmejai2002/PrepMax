@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -16,7 +16,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import { Plus, Pencil } from 'lucide-react'
+import { Plus, Pencil, Bell } from 'lucide-react'
+import { notifyCrispMembers } from './actions'
 
 interface Room {
   id: string
@@ -28,6 +29,7 @@ interface Room {
 
 interface Props {
   initialRooms: Room[]
+  isSac?: boolean
 }
 
 type RoomForm = { name: string; location: string; capacity: string }
@@ -79,7 +81,7 @@ function RoomFormFields({
   )
 }
 
-export default function RoomsClient({ initialRooms }: Props) {
+export default function RoomsClient({ initialRooms, isSac = false }: Props) {
   const [rooms, setRooms] = useState<Room[]>(initialRooms)
 
   const [addOpen, setAddOpen] = useState(false)
@@ -89,7 +91,25 @@ export default function RoomsClient({ initialRooms }: Props) {
   const [editRoom, setEditRoom] = useState<Room | null>(null)
   const [saving, setSaving] = useState(false)
 
+  const [notifying, startNotify] = useTransition()
+
   const supabase = createClient()
+
+  function handleNotify() {
+    const liveRooms = rooms.filter(r => r.is_live).map(r => r.name)
+    const msg = liveRooms.length
+      ? `Room availability updated. Live rooms: ${liveRooms.join(', ')}. Check PrepMax for current status.`
+      : 'Room availability updated. No rooms are currently live. Check PrepMax for current status.'
+
+    startNotify(async () => {
+      const result = await notifyCrispMembers(msg)
+      if (result.error) {
+        toast.error(result.error === 'no_members' ? 'No CRISP members found.' : 'Could not send notification.')
+      } else {
+        toast.success(`Notified ${result.count} CRISP member${result.count === 1 ? '' : 's'}.`)
+      }
+    })
+  }
 
   async function toggleLive(room: Room) {
     const { error } = await supabase
@@ -165,7 +185,19 @@ export default function RoomsClient({ initialRooms }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        {isSac && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5"
+            onClick={handleNotify}
+            disabled={notifying}
+          >
+            <Bell className="h-4 w-4" />
+            {notifying ? 'Notifying…' : 'Notify CRISP'}
+          </Button>
+        )}
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger render={<Button size="sm" className="gap-1.5" />}>
             <Plus className="h-4 w-4" />

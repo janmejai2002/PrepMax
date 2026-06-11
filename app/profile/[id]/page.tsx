@@ -58,7 +58,7 @@ export default async function PublicProfilePage({
 
   const { data: viewer } = await supabase
     .from('profiles')
-    .select('is_crisp_admin, is_sac, is_mentor')
+    .select('is_committee, is_crisp_admin, is_sac, is_mentor')
     .eq('id', user.id)
     .single()
 
@@ -211,7 +211,7 @@ export default async function PublicProfilePage({
                           <p className="text-sm font-medium truncate">{slot.topic}</p>
                         </div>
                         <p className="text-[11px] text-muted-foreground">
-                          {formatSlotTime(slot.start_at, slot.start_at)} ·{' '}
+                          {formatSlotTime(slot.start_at)} ·{' '}
                           {slot.enrolled_count}/{slot.capacity} seats
                         </p>
                       </div>
@@ -239,7 +239,8 @@ export default async function PublicProfilePage({
       <BottomNav
         isAdmin={!!(viewer?.is_crisp_admin || viewer?.is_sac)}
         isMentor={!!viewer?.is_mentor}
-        isSenior={!!(viewer?.is_crisp_admin || viewer?.is_sac || viewer?.is_mentor)}
+        isSenior={!!viewer?.is_mentor}
+        isCommittee={!!(viewer?.is_committee || viewer?.is_crisp_admin || viewer?.is_sac)}
       />
     </div>
   )

@@ -13,39 +13,49 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const TABS = [
-  { href: '/', label: 'Slots', icon: CalendarRange },
-  { href: '/knowledge', label: 'Knowledge', icon: BookOpen },
-  { href: '/doubts', label: 'Doubts', icon: MessageCircleQuestion },
-  { href: '/profile', label: 'Profile', icon: CircleUser },
-]
+type Tab = { href: string; label: string; icon: React.FC<{ className?: string; strokeWidth?: number }> }
 
 export function BottomNav({
   isAdmin = false,
   isMentor = false,
   isSenior = false,
+  isCommittee = false,
 }: {
   isAdmin?: boolean
   isMentor?: boolean
   isSenior?: boolean
+  isCommittee?: boolean
 }) {
   const pathname = usePathname()
   const requestsHref = isSenior ? '/requests' : '/my-requests'
-  // 5-tab base: Slots · Requests · Knowledge · Doubts · Profile
-  // Role extras (Admin/Mentor) replace Profile when active to stay at 5 tabs max
-  const baseTabs = [
-    { href: '/', label: 'Slots', icon: CalendarRange },
-    { href: requestsHref, label: 'Requests', icon: ClipboardList },
-    { href: '/knowledge', label: 'Knowledge', icon: BookOpen },
-    { href: '/doubts', label: 'Doubts', icon: MessageCircleQuestion },
-    { href: '/profile', label: 'Profile', icon: CircleUser },
-  ]
-  let tabs = [...baseTabs]
-  if (isMentor && !isAdmin) {
-    tabs = [...baseTabs.slice(0, 4), { href: '/mentor', label: 'Mentees', icon: UserCheck }]
-  }
-  if (isAdmin) {
-    tabs = [...baseTabs.slice(0, 4), { href: '/admin/stats', label: 'Admin', icon: ShieldCheck }]
+
+  let tabs: Tab[]
+
+  if (isCommittee) {
+    // Committee accounts (CRISP, SAC): Knowledge + optional Admin + Profile only.
+    // No Slots, Requests, or Doubts tabs.
+    tabs = [
+      { href: '/knowledge', label: 'Knowledge', icon: BookOpen },
+      ...(isAdmin ? [{ href: '/admin/stats', label: 'Admin', icon: ShieldCheck } as Tab] : []),
+      { href: '/profile', label: 'Profile', icon: CircleUser },
+    ]
+  } else {
+    // 5-tab base: Slots · Requests · Knowledge · Doubts · Profile
+    // Role extras (Admin/Mentor) replace Profile when active to stay at 5 tabs max
+    const baseTabs: Tab[] = [
+      { href: '/', label: 'Slots', icon: CalendarRange },
+      { href: requestsHref, label: 'Requests', icon: ClipboardList },
+      { href: '/knowledge', label: 'Knowledge', icon: BookOpen },
+      { href: '/doubts', label: 'Doubts', icon: MessageCircleQuestion },
+      { href: '/profile', label: 'Profile', icon: CircleUser },
+    ]
+    tabs = [...baseTabs]
+    if (isMentor && !isAdmin) {
+      tabs = [...baseTabs.slice(0, 4), { href: '/mentor', label: 'Mentees', icon: UserCheck }]
+    }
+    if (isAdmin) {
+      tabs = [...baseTabs.slice(0, 4), { href: '/admin/stats', label: 'Admin', icon: ShieldCheck }]
+    }
   }
 
   return (
