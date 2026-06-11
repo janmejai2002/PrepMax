@@ -149,9 +149,13 @@
 }
 
 @layer utilities {
-  /* Bottom nav clearance: tab bar height + iOS home-indicator safe area */
+  /* Bottom nav clearance: floating pill (~60px) + 12px margin + safe area */
   .pb-nav {
-    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom));
+  }
+  /* Sticky header clearance (52px header) */
+  .pt-header {
+    padding-top: 3.25rem;
   }
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);

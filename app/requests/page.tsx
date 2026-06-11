@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { BottomNav } from '@/components/nav/bottom-nav'
+import { AppHeader, profileToNavRole } from '@/components/nav/app-header'
 import { RequestsFeedClient } from './requests-feed-client'
 import type { OpenRequest } from '@/lib/types'
 
@@ -14,7 +15,7 @@ export default async function RequestsPage() {
   const [{ data: profile }, { data: raw }] = await Promise.all([
     supabase
       .from('profiles')
-      .select('year, can_host_gd, can_host_pi, is_crisp, is_sac')
+      .select('name, year, can_host_gd, can_host_pi, is_crisp, is_sac')
       .eq('id', user.id)
       .single(),
     supabase.rpc('get_open_requests'),
@@ -35,6 +36,7 @@ export default async function RequestsPage() {
 
   return (
     <div className="min-h-screen bg-background pb-nav">
+      <AppHeader name={profile.name} role={profileToNavRole(profile)} />
       <RequestsFeedClient initialRequests={requests} />
       <BottomNav
         isSenior={isSenior}

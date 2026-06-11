@@ -6,15 +6,17 @@ import {
   CalendarRange,
   BookOpen,
   MessageCircleQuestion,
-  CircleUser,
   ShieldCheck,
   ClipboardList,
   Building2,
-  Eye,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-type Tab = { href: string; label: string; icon: React.FC<{ className?: string; strokeWidth?: number }> }
+type Tab = {
+  href: string
+  label: string
+  icon: React.FC<{ className?: string; strokeWidth?: number }>
+}
 
 export function BottomNav({
   isAdmin = false,
@@ -28,68 +30,79 @@ export function BottomNav({
   isCrisp?: boolean
 }) {
   const pathname = usePathname()
-  const requestsHref = isSenior ? '/requests' : '/my-requests'
 
   let tabs: Tab[]
 
   if (isSac) {
-    // SAC: Rooms only
     tabs = [
       { href: '/admin/rooms', label: 'Rooms', icon: Building2 },
     ]
   } else if (isCrisp) {
-    // CRISP member: full senior nav + Rooms + Monitor
+    // CRISP: max 4 — Feed, Requests, Knowledge, Admin
     tabs = [
-      { href: '/', label: 'Slots', icon: CalendarRange },
-      { href: '/requests', label: 'Requests', icon: ClipboardList },
-      { href: '/knowledge', label: 'Knowledge', icon: BookOpen },
-      { href: '/doubts', label: 'Doubts', icon: MessageCircleQuestion },
-      { href: '/admin/rooms', label: 'Rooms', icon: Building2 },
-      { href: '/crisp-monitor', label: 'Monitor', icon: Eye },
-      { href: '/profile', label: 'Profile', icon: CircleUser },
+      { href: '/',             label: 'Feed',      icon: CalendarRange },
+      { href: '/requests',     label: 'Requests',  icon: ClipboardList },
+      { href: '/knowledge',    label: 'Knowledge', icon: BookOpen },
+      { href: '/admin/stats',  label: 'Admin',     icon: ShieldCheck },
+    ]
+  } else if (isSenior) {
+    tabs = [
+      { href: '/',             label: 'Feed',      icon: CalendarRange },
+      { href: '/requests',     label: 'Requests',  icon: ClipboardList },
+      { href: '/knowledge',    label: 'Knowledge', icon: BookOpen },
+      { href: '/doubts',       label: 'Doubts',    icon: MessageCircleQuestion },
     ]
   } else {
-    // Junior / Senior: Slots · Requests · Knowledge · Doubts · [Admin] · Profile
-    const coreTabs: Tab[] = [
-      { href: '/', label: 'Slots', icon: CalendarRange },
-      { href: requestsHref, label: 'Requests', icon: ClipboardList },
-      { href: '/knowledge', label: 'Knowledge', icon: BookOpen },
-      { href: '/doubts', label: 'Doubts', icon: MessageCircleQuestion },
+    // Junior
+    tabs = [
+      { href: '/',             label: 'Feed',      icon: CalendarRange },
+      { href: '/my-requests',  label: 'Requests',  icon: ClipboardList },
+      { href: '/knowledge',    label: 'Knowledge', icon: BookOpen },
+      { href: '/doubts',       label: 'Doubts',    icon: MessageCircleQuestion },
     ]
-    const profileTab: Tab = { href: '/profile', label: 'Profile', icon: CircleUser }
-    if (isAdmin) {
-      tabs = [...coreTabs, { href: '/admin/stats', label: 'Admin', icon: ShieldCheck }, profileTab]
-    } else {
-      tabs = [...coreTabs, profileTab]
-    }
   }
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border/60 bg-background/80 backdrop-blur-xl pb-safe">
-      <div className="mx-auto flex max-w-md items-stretch justify-around px-2">
-        {tabs.map(({ href, label, icon: Icon }) => {
-          const active =
-            href === '/' ? pathname === '/' : pathname.startsWith(href)
+    <nav
+      className="fixed inset-x-0 bottom-0 z-50 flex justify-center px-4"
+      style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
+    >
+      <div
+        className={cn(
+          'flex items-stretch rounded-2xl border border-border/50 bg-card/95 shadow-xl shadow-black/10 backdrop-blur-xl',
+          // SAC single-tab gets a narrower pill
+          isSac ? 'w-auto px-2' : 'w-full max-w-sm',
+        )}
+      >
+        {tabs.map(({ href, label, icon: Icon }, i) => {
+          const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
+          const isFirst = i === 0
+          const isLast = i === tabs.length - 1
           return (
             <Link
               key={href}
               href={href}
               className={cn(
-                'flex min-w-14 flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors',
-                active
-                  ? 'text-foreground'
-                  : 'text-muted-foreground/70 hover:text-muted-foreground'
+                'group relative flex flex-1 flex-col items-center justify-center gap-[3px] py-3 transition-colors',
+                isFirst && 'rounded-l-2xl',
+                isLast && 'rounded-r-2xl',
+                active ? 'text-gd' : 'text-muted-foreground/50 hover:text-muted-foreground',
               )}
             >
-              <span
-                className={cn(
-                  'flex h-7 w-12 items-center justify-center rounded-full transition-colors',
-                  active && 'bg-gd-soft text-gd'
-                )}
-              >
-                <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.2 : 1.8} />
+              {/* active background indicator */}
+              {active && (
+                <span className="absolute inset-x-1.5 inset-y-1.5 rounded-xl bg-gd-soft transition-all" />
+              )}
+              <Icon
+                className={cn('relative transition-transform', active ? 'h-[19px] w-[19px]' : 'h-[18px] w-[18px]')}
+                strokeWidth={active ? 2.3 : 1.7}
+              />
+              <span className={cn(
+                'relative text-[10px] font-semibold tracking-wide leading-none transition-opacity',
+                !active && 'opacity-60',
+              )}>
+                {label}
               </span>
-              {label}
             </Link>
           )
         })}

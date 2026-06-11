@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { BottomNav } from '@/components/nav/bottom-nav'
+import { AppHeader, profileToNavRole } from '@/components/nav/app-header'
 import { RoomNowClient } from './room-now-client'
 import {
   BarChart3, CheckCircle2, XCircle, Users, Radio,
@@ -64,7 +65,7 @@ export default async function AdminStatsPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('is_crisp, is_sac')
+    .select('name, is_crisp, is_sac')
     .eq('id', user.id)
     .single()
 
@@ -85,6 +86,7 @@ export default async function AdminStatsPage() {
 
   return (
     <div className="min-h-screen bg-background pb-nav">
+      <AppHeader name={profile?.name ?? ''} role={profileToNavRole(profile ?? {})} />
       <div className="mx-auto max-w-md px-4 pt-6 space-y-6">
         {/* Header */}
         <div>

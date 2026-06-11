@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { BottomNav } from '@/components/nav/bottom-nav'
+import { AppHeader, profileToNavRole } from '@/components/nav/app-header'
 import { initials } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { UserCheck, TrendingUp, AlertCircle } from 'lucide-react'
@@ -72,6 +73,7 @@ export default async function MentorPage() {
 
   return (
     <div className="min-h-screen bg-background pb-nav">
+      <AppHeader name={profile.name} role={profileToNavRole(profile)} />
       <div className="mx-auto max-w-md px-4 pt-6">
         {/* Header */}
         <div className="flex items-center gap-2 mb-6">

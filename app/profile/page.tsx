@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { BottomNav } from '@/components/nav/bottom-nav'
+import { AppHeader, profileToNavRole } from '@/components/nav/app-header'
 import { initials } from '@/lib/format'
 import { SignOutButton } from './sign-out-button'
 import { cn } from '@/lib/utils'
@@ -81,6 +82,7 @@ export default async function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-background pb-nav">
+      <AppHeader name={profile.name} role={profileToNavRole(profile)} />
       <div className="mx-auto max-w-md px-4 pt-10">
         <div className="flex flex-col items-center gap-3 text-center">
           <span className="flex h-20 w-20 items-center justify-center rounded-full bg-gd-soft text-xl font-bold text-gd">

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { BottomNav } from '@/components/nav/bottom-nav'
+import { AppHeader, profileToNavRole } from '@/components/nav/app-header'
 import { MyRequestsClient } from './my-requests-client'
 import type { MySlotRequest } from '@/lib/types'
 
@@ -35,6 +36,7 @@ export default async function MyRequestsPage() {
 
   return (
     <div className="min-h-screen bg-background pb-nav">
+      <AppHeader name={profile.name} role={profileToNavRole(profile)} />
       <MyRequestsClient
         initialRequests={requests}
         userName={profile.name}

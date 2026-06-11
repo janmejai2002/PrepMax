@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { BottomNav } from '@/components/nav/bottom-nav'
+import { AppHeader, profileToNavRole } from '@/components/nav/app-header'
 import { MenteeMonitorClient } from './mentee-monitor-client'
 
 export default async function MenteeMonitorPage() {
@@ -32,6 +33,7 @@ export default async function MenteeMonitorPage() {
 
   return (
     <div className="min-h-screen bg-background pb-nav">
+      <AppHeader name={profile.name} role={profileToNavRole(profile)} />
       <div className="mx-auto max-w-md px-4 py-8 space-y-4">
         <div>
           <h1 className="text-xl font-bold">Mentee Monitor</h1>

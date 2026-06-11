@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { BottomNav } from '@/components/nav/bottom-nav'
+import { AppHeader, profileToNavRole } from '@/components/nav/app-header'
 import { initials, formatSlotTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { SCORE_DIMS, SCORE_DIM_LABELS } from '@/lib/types'
@@ -58,7 +59,7 @@ export default async function PublicProfilePage({
 
   const { data: viewer } = await supabase
     .from('profiles')
-    .select('is_crisp, is_sac, can_host_gd, can_host_pi')
+    .select('name, is_crisp, is_sac, can_host_gd, can_host_pi')
     .eq('id', user.id)
     .single()
 
@@ -85,6 +86,7 @@ export default async function PublicProfilePage({
 
   return (
     <div className="min-h-screen bg-background pb-nav">
+      <AppHeader name={viewer?.name ?? ''} role={profileToNavRole(viewer ?? {})} />
       <div className="mx-auto max-w-md px-4 pt-10 space-y-6">
 
         {/* Header */}

@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { BottomNav } from '@/components/nav/bottom-nav'
+import { AppHeader, profileToNavRole } from '@/components/nav/app-header'
 import { SlotDetailClient } from './slot-detail-client'
 import type { SlotDetail } from '@/lib/types'
 
@@ -36,6 +37,7 @@ export default async function SlotDetailPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-background pb-nav">
+      <AppHeader name={profile.name} role={profileToNavRole(profile)} />
       <div className="mx-auto max-w-md">
         {/* Back nav */}
         <div className="px-4 pt-5 pb-2">

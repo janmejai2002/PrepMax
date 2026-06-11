@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { SlotsFeed } from '@/components/slots/slots-feed'
 import { BottomNav } from '@/components/nav/bottom-nav'
+import { AppHeader, profileToNavRole } from '@/components/nav/app-header'
 import type { FeedSlot, HostCapabilities, RoomOption, JudgeOption } from '@/lib/types'
 
 export default async function HomePage() {
@@ -84,6 +85,7 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen bg-background pb-nav">
+      <AppHeader name={profile.name} role={profileToNavRole(profile)} />
       <SlotsFeed
         initialSlots={slots}
         me={{ id: user.id, name: profile.name, isSenior }}

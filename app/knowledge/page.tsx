@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { BottomNav } from '@/components/nav/bottom-nav'
+import { AppHeader, profileToNavRole } from '@/components/nav/app-header'
 import { KnowledgeFeedClient } from './knowledge-feed-client'
 import type { KnowledgePost } from '@/lib/types'
 
@@ -36,7 +37,7 @@ export default async function KnowledgePage() {
   const [{ data: profile }, posts] = await Promise.all([
     supabase
       .from('profiles')
-      .select('is_crisp, is_sac')
+      .select('name, is_crisp, is_sac')
       .eq('id', user.id)
       .single(),
     getCachedPosts(),
@@ -53,6 +54,7 @@ export default async function KnowledgePage() {
 
   return (
     <div className="min-h-screen bg-background pb-nav">
+      <AppHeader name={profile?.name ?? ''} role={profileToNavRole(profile ?? {})} />
       <KnowledgeFeedClient initialPosts={typedPosts} canPost={canPost} />
       <BottomNav isAdmin={isAdmin} isCrisp={isCrisp} />
     </div>

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { BottomNav } from '@/components/nav/bottom-nav'
+import { AppHeader, profileToNavRole } from '@/components/nav/app-header'
 import { DoubtsFeedClient } from './doubts-feed-client'
 import type { Doubt } from '@/lib/types'
 
@@ -14,7 +15,7 @@ export default async function DoubtsPage() {
   const [{ data: profile }, { data: doubts }] = await Promise.all([
     supabase
       .from('profiles')
-      .select('is_crisp, is_sac, can_host_gd, can_host_pi')
+      .select('name, is_crisp, is_sac, can_host_gd, can_host_pi')
       .eq('id', user.id)
       .single(),
     supabase
@@ -30,6 +31,7 @@ export default async function DoubtsPage() {
 
   return (
     <div className="min-h-screen bg-background pb-nav">
+      <AppHeader name={profile?.name ?? ''} role={profileToNavRole(profile ?? {})} />
       <DoubtsFeedClient initialDoubts={(doubts ?? []) as Doubt[]} myUserId={user.id} />
       <BottomNav isAdmin={isAdmin} isSenior={isSenior} isCrisp={isCrisp} />
     </div>

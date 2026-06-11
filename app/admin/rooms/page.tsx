@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { BottomNav } from '@/components/nav/bottom-nav'
+import { AppHeader, profileToNavRole } from '@/components/nav/app-header'
 import RoomsClient from './rooms-client'
 import { BarChart3, Building2, Users, Users2 } from 'lucide-react'
 
@@ -15,7 +16,7 @@ export default async function RoomsAdminPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('is_crisp, is_sac')
+    .select('name, is_crisp, is_sac')
     .eq('id', user.id)
     .single()
 
@@ -33,6 +34,7 @@ export default async function RoomsAdminPage() {
 
   return (
     <div className="min-h-screen bg-background pb-nav">
+      <AppHeader name={profile?.name ?? ''} role={profileToNavRole(profile ?? {})} />
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
         <div>
           <h1 className="text-xl font-bold">Rooms</h1>
