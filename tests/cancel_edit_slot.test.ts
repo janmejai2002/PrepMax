@@ -246,4 +246,39 @@ describe('edit_slot', () => {
     })
     expect(data.error).toBe('unauthorized')
   })
+
+  it('editing time to overlap another host slot → host_time_conflict', async () => {
+    const now = new Date()
+    // Create a second host slot 3 h from now (no overlap with the first at +1h)
+    const { data: slot2 } = await adminSb
+      .from('slots')
+      .insert({
+        type: 'GD',
+        host_id: hostId,
+        room_id: testRoomId,
+        start_at: new Date(now.getTime() + 3 * 60 * 60 * 1000).toISOString(),
+        end_at:   new Date(now.getTime() + 4 * 60 * 60 * 1000).toISOString(),
+        topic: '__ce-conflict-slot__',
+        capacity: 4,
+      })
+      .select('id')
+      .single()
+    const conflictSlotId = slot2!.id
+
+    try {
+      // Move slotId's time to overlap with the second slot
+      const { data } = await hostClient.rpc('edit_slot', {
+        p_slot_id: slotId,
+        p_expected_version: 1,
+        p_patch: {
+          start_at: new Date(now.getTime() + 3 * 60 * 60 * 1000).toISOString(),
+          end_at:   new Date(now.getTime() + 4 * 60 * 60 * 1000).toISOString(),
+        },
+      })
+      expect(data.error).toBe('host_time_conflict')
+      expect((await slotRow())!.version).toBe(1) // no change
+    } finally {
+      await adminSb.from('slots').delete().eq('id', conflictSlotId)
+    }
+  })
 })

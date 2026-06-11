@@ -118,7 +118,7 @@ export default function RoomsClient({ initialRooms, isSac = false }: Props) {
       .eq('id', room.id)
 
     if (error) { toast.error('Could not update room.'); return }
-
+    navigator.vibrate?.(30)
     setRooms((prev) =>
       prev.map((r) => (r.id === room.id ? { ...r, is_live: !r.is_live } : r))
     )

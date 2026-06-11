@@ -5,7 +5,7 @@
 ---
 
 ## Current Phase
-**Phase 7 — Navigation polish + cockpit revamp done. Sticky app header with avatar/role badge. Floating pill nav (4 tabs/role). Cockpit hardened. 152/152 tests green.**
+**Phase 8 — Notifications + clash audit + haptics done. In-app notification bell + realtime panel. Full scheduling clash coverage (create/edit/confirm). Haptics on 6 interaction points. 153/153 tests green.**
 
 ## Status
 
@@ -55,7 +55,13 @@
 | dev seed users | ✅ Done | 4 test accounts via `npx tsx scripts/seed-dev-users.ts` |
 | Vercel deploy | ✅ Done | https://prep-max-alpha.vercel.app |
 | GitHub repo | ✅ Done | https://github.com/janmejai2002/PrepMax |
-| Tests | ✅ Done | 152/152 passing |
+| Tests | ✅ Done | 153/153 passing |
+| Migration 026 | ✅ Done | notifications table + RLS + realtime + create_notification helper + get_my_notifications + mark_read + confirm_match v3 (±90min conflict) + express_interest v3 + cancel_slot_request + leave_slot v3 + cancel_slot v3 + edit_slot v3 + assign_mentee v3 |
+| Migration 027 | ✅ Done | Fix leave_slot + cancel_slot return shapes to match test expectations |
+| Migration 028 | ✅ Done | edit_slot v4: host self-overlap check on time-change (mirrors create_slot guard) |
+| NotificationBell | ✅ Done | Header bell with unread count badge; Sheet panel; realtime postgres_changes subscription; mark-read on tap; mark-all-read |
+| RoomScheduleSheet | ✅ Done | "See availability" in hosting flow; 3-day grid with booked/free slots interleaved; tap free window → fills start_at |
+| Haptics | ✅ Done | navigator.vibrate on join (double-pulse), leave (30ms), confirm match (triple-pulse), express interest, post request, room live toggle |
 | lib/email-role.ts | ✅ Done | inferYearFromEmail + isCommitteeEmail + isSacEmail + isCrispEmail |
 | Committee gating | ✅ Done | @xlri.ac.in accounts redirected from /, /requests, /my-requests, /doubts → /knowledge |
 | SAC notify button | ✅ Done | "Notify CRISP" button on /admin/rooms (SAC-only); server action inserts outbox events for all is_committee members |
@@ -121,11 +127,9 @@ Magic link works right now without any extra config.
 ## Exact Next Step (open this at the start of the next session)
 
 1. **Enable email notifications** (user action): Set `RESEND_API_KEY` + `APP_URL` in Supabase Edge Function secrets, then schedule `drain-notifications` cron every 60s — see "One action still needed" above.
-2. **Verify nav + cockpit on live app** — open https://prep-max-alpha.vercel.app, log in as each dev user (junior/senior/crisp/sac), confirm header, pill nav, and tab layout look correct.
-3. **Seed cockpit test data**: `npx tsx scripts/seed-dev-feedback.ts` → verify Dev Senior cockpit shows completed state + feedback buttons → verify Dev Junior profile shows feedback cards.
-4. **Clash audit continuation** — leave_slot waitlist-promotion edge case + confirm_match senior scheduling overlap check.
-5. **Phone-based Playwright E2E** — run `/ship-check` at 390×844 for each role (junior, senior, crisp, sac). Fix any regressions.
-6. **Phase 7 Hardening** — RLS audit, Lighthouse mobile pass, Sentry stub, RUNBOOK.md.
+2. **Performance pass** (Item 7): Measure transitions, kill remaining waterfalls, prefetch routes, cache where safe.
+3. **QA / Playwright** (Item 8): All 4 roles at 390px — junior join/leave/request, senior host/cockpit, crisp admin, sac rooms. Fix any regressions.
+4. **Phase 8 Hardening** — RLS audit, Lighthouse mobile pass, Sentry stub, RUNBOOK.md.
 
 ## Possible Future Enhancements (V2)
 - No-show penalty: 24h booking cooldown after 2 no-shows in 7 days (config-flagged — data path already built)
@@ -159,3 +163,4 @@ Magic link works right now without any extra config.
 | 2026-06-12 | Session 19: Role/view reconciliation + scheduling clash detection + mentee monitor. Migration 023: join_slot v4 (seniors blocked + junior time-conflict check), edit_slot v2 (room double-booking on time-change), create_slot RPC (host-overlap + room-overlap checks, co-judges bundled), get_all_juniors/assign_mentee/unassign_mentee RPCs. BottomNav: SAC→single Rooms tab, CRISP member→Rooms+Monitor tabs. SAC redirected from / to /admin/rooms. Senior join button hidden (canJoin prop thread through SlotsFeed→SlotCard + me.isSenior in slot-detail-client). /admin/rooms now accessible to is_crisp_member. New /crisp-monitor page: mentee list with search/filter, assign/unassign buttons. host-slot-sheet.tsx migrated from direct INSERT to create_slot RPC. 153/153 tests. |
 | 2026-06-12 | Session 20: is_crisp consolidation. Migration 024: collapsed is_mentor+is_crisp_member+is_crisp_admin+is_committee → single is_crisp boolean. 4-role model: JUNIOR (b26), SENIOR (b25), SENIOR+CRISP (is_crisp), SAC (is_sac). Migration 025: fixed join_slot v6 (v5 had NULL position + wrong 'waitlisted' status) + fixed express_interest (referenced dropped columns). Validation fixes: knowledge post (title≥3/body≥10) and doubts (min 5 chars) now validate client-side with friendly errors. All 20 app pages, BottomNav, scripts, all 13 test files updated. committee-gating tests rewritten for new model. 152/152 tests. |
 | 2026-06-12 | Session 21: Task 1 (analysis) confirm_match traced end-to-end + 5 bugs/gaps documented. Task 2: AppHeader (sticky 52px, role badge+avatar, dropdown sign-out/profile) + BottomNav redesigned as floating pill (bg-card/95 blur, active=gd-soft bg+icon+label, inactive=50% muted) + Profile tab removed from all roles + CRISP capped at 4 tabs (Feed/Requests/Knowledge/Admin) + all 12 pages updated (missing name selects fixed). Task 3: Cockpit hardened (token-reload fix, 2-step end-confirm, live feedback, feedback count stat, feedback summary strip, clearer QR text, better pre-start card) + seed-dev-feedback.ts (completed slot + attended enrollment + feedback rows). No schema changes. 152/152 tests. |
+| 2026-06-12 | Session 22: In-app notification system (migration 026): notifications table + RLS + realtime, NotificationBell component (header bell + unread badge + Sheet panel + realtime subscription). Confirm_match v3: ±90min host scheduling conflict guard. All 8 notification triggers wired (match_confirmed, interest_expressed, non_chosen, request_cancelled, waitlist_promoted, slot_cancelled, slot_edited, mentee_added). Migration 027: fixed leave_slot + cancel_slot return shapes. Migration 028: edit_slot v4 host self-overlap check. RoomScheduleSheet: 3-day availability grid in hosting flow. Haptics: navigator.vibrate on join/leave/confirm-match/interest/post-request/room-toggle. 153/153 tests. |

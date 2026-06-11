@@ -130,6 +130,7 @@ export function SlotDetailClient({ slot: initialSlot, me }: { slot: SlotDetail; 
       return
     }
     if (data.status === 'confirmed') {
+      navigator.vibrate?.([30, 20, 60])
       toast.success(`You're in! Seat #${data.position}`)
       setSlot(s => ({
         ...s,
@@ -137,6 +138,7 @@ export function SlotDetailClient({ slot: initialSlot, me }: { slot: SlotDetail; 
         enrolled_count: data.idempotent ? s.enrolled_count : s.enrolled_count + 1,
       }))
     } else {
+      navigator.vibrate?.(30)
       toast(`Waitlist #${data.position} — we'll grab you a seat if someone drops.`)
       setSlot(s => ({ ...s, my_enrollment: { status: 'waitlist', position: data.position } }))
     }
@@ -150,6 +152,7 @@ export function SlotDetailClient({ slot: initialSlot, me }: { slot: SlotDetail; 
     })
     setLeaving(false)
     if (error || data?.error) { toast.error('Could not leave — try again.'); return }
+    navigator.vibrate?.(30)
     const seatFreed = wasConfirmed && data.seat_freed
     setSlot(s => ({
       ...s,

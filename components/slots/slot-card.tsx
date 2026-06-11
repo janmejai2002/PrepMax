@@ -83,6 +83,7 @@ export function SlotCard({ slot, me, canManage, canJoin = true, onSlotChange, on
     }
 
     if (data.status === 'confirmed') {
+      navigator.vibrate?.([30, 20, 60])
       toast.success(`You're in! Seat #${data.position} 🎉`)
       onSlotChange({
         ...slot,
@@ -90,6 +91,7 @@ export function SlotCard({ slot, me, canManage, canJoin = true, onSlotChange, on
         enrolled_count: data.idempotent ? slot.enrolled_count : slot.enrolled_count + 1,
       })
     } else if (data.status === 'waitlist') {
+      navigator.vibrate?.(30)
       toast(`Slot full — you're #${data.position} on the waitlist`, {
         description: 'We grab you a seat the moment someone drops.',
       })
@@ -113,6 +115,7 @@ export function SlotCard({ slot, me, canManage, canJoin = true, onSlotChange, on
       toast.error('Could not leave the slot — try again.')
       return
     }
+    navigator.vibrate?.(30)
 
     // A confirmed leaver with no waitlist behind them frees the seat.
     const seatFreed = wasConfirmed && data.seat_freed

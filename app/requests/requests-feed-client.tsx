@@ -49,6 +49,7 @@ function RequestCard({
       } else {
         const { data } = await sb.rpc('express_interest', { p_request_id: req.id })
         if (data?.error) { toast.error(data.error); return }
+        navigator.vibrate?.(50)
         toast.success("You're interested — the junior can see your name now")
         onInterestToggle(req.id, true)
       }

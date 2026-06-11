@@ -83,6 +83,7 @@ function SeniorRow({
         p_senior_id: senior.senior_id,
       })
       if (data?.error) { toast.error(data.error); return }
+      navigator.vibrate?.([50, 50, 100])
       onConfirmed(requestId, senior.senior_id, senior.name, buildWaUrl(senior, juniorName))
     })
   }
@@ -261,7 +262,7 @@ function NewRequestSheet({
         p_description:  description.trim(),
       })
       if (data?.error) { toast.error(data.error); return }
-
+      navigator.vibrate?.(50)
       toast.success('Request posted! Seniors can now see it.')
       const newReq: MySlotRequest = {
         id: data.id,
