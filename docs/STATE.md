@@ -50,7 +50,7 @@
 | /knowledge | ✅ Done | Committee-published prep content feed with function filters, expandable posts, post form |
 | /doubts | ✅ Done | Q&A feed with upvotes, answers, accept answer, resolved filter, function filters |
 | /s/[slug] | ✅ Done | Public share page with OG metadata for WhatsApp/iMessage previews |
-| /dev-login | ✅ Done | Dev-only login page (disabled in production) |
+| /dev-login | ✅ Done | Gated by ALLOW_DEV_LOGIN=true env flag (set in Vercel); live at https://prep-max-alpha.vercel.app/dev-login |
 | Edge Function drain-notifications | ✅ Done | Drains outbox, sends via Resend, logs to notification_log |
 | dev seed users | ✅ Done | 4 test accounts via `npx tsx scripts/seed-dev-users.ts` |
 | Vercel deploy | ✅ Done | https://prep-max-alpha.vercel.app |
@@ -75,7 +75,7 @@ Run `npx tsx scripts/seed-dev-users.ts` to create these accounts (idempotent).
 | `sacdelhi@xlri.ac.in` | SAC shared login (is_committee + is_sac, year=null) | `PrepMax@dev1` |
 
 Dev login URL (local): http://localhost:3000/dev-login
-Dev login URL (prod): N/A — disabled in production
+Dev login URL (prod): https://prep-max-alpha.vercel.app/dev-login (ALLOW_DEV_LOGIN=true set in Vercel)
 
 ## One action still needed from Janmejai
 
@@ -139,3 +139,4 @@ Magic link works right now without any extra config.
 | 2026-06-11 | Session 13: Junior-request flow (migration 021). slot_requests + interests tables. 7 RPCs: create/cancel_slot_request, express/retract_interest, confirm_match, get_open_requests, get_my_requests. /requests senior feed (anonymous, "I'm available" toggle). /my-requests junior page (post form, interested seniors list, WhatsApp intro, confirm match). BottomNav updated with Requests tab (seniors→/requests, juniors→/my-requests). fileParallelism=false in vitest.config. 20 new tests. 132/132 tests. |
 | 2026-06-11 | Session 14: Navigation perf. Root causes: no loading.tsx on 8 routes (blank white screen), serial Supabase waterfall queries (3× round-trips), knowledge posts re-fetched every request. Fixes: loading.tsx for 8 routes (skeleton appears <50ms), Promise.all parallel queries on 5 pages, unstable_cache(60s) on knowledge posts via service client. lib/supabase/service.ts. Before: ~5s blank screen. After: instant skeleton, data in ~1-2s. 132/132 tests green. |
 | 2026-06-11 | Session 15: Committee gating audit + SAC notify. Gated /, /requests, /my-requests, /doubts from @xlri.ac.in accounts → redirect /knowledge. BottomNav isCommittee prop: committee sees Knowledge+Profile; +Admin tab for crisp_admin/sac. SAC "Notify CRISP" button on /admin/rooms (server action app/admin/rooms/actions.ts → outbox). Fixed pre-existing formatSlotTime(x,x) TS bug in profile/[id]. 13 new committee-gating unit tests. 145/145 tests. |
+| 2026-06-11 | Session 16: Shareable test deployment. Mirrored b25349 flags → b25426 in Supabase (can_host_gd/pi, is_mentor, is_committee, is_crisp_admin, is_sac). Re-gated /dev-login behind ALLOW_DEV_LOGIN=true env flag (export const dynamic='force-dynamic' + .trim() for robustness). Fixed pre-existing onboarding-form zodResolver TS error (blocked Vercel build). Seeded 4 dev accounts against prod Supabase. Live: https://prep-max-alpha.vercel.app/dev-login. 145/145 tests. |
