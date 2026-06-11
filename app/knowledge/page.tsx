@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
-import { BookOpen } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { BottomNav } from '@/components/nav/bottom-nav'
+import { KnowledgeFeedClient } from './knowledge-feed-client'
+import type { KnowledgePost } from '@/lib/types'
 
 export default async function KnowledgePage() {
   const supabase = await createClient()
@@ -12,22 +13,32 @@ export default async function KnowledgePage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('is_crisp_admin, is_sac')
+    .select('is_committee, is_crisp_admin, is_sac')
     .eq('id', user.id)
     .single()
 
+  const { data: posts } = await supabase
+    .from('knowledge_posts')
+    .select(`
+      id, author_id, title, body, tags, function_tag, is_pinned, created_at, updated_at,
+      profiles!knowledge_posts_author_id_fkey ( name )
+    `)
+    .order('is_pinned', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(50)
+
+  const typedPosts: KnowledgePost[] = (posts ?? []).map((p: Record<string, unknown>) => ({
+    ...(p as Omit<KnowledgePost, 'author_name'>),
+    author_name: (p.profiles as { name: string } | null)?.name ?? 'Unknown',
+  }))
+
+  const canPost = !!(profile?.is_committee || profile?.is_crisp_admin || profile?.is_sac)
+  const isAdmin = !!(profile?.is_crisp_admin || profile?.is_sac)
+
   return (
     <div className="min-h-screen bg-background pb-nav">
-      <div className="mx-auto flex max-w-md flex-col items-center gap-3 px-6 pt-40 text-center">
-        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gd-soft">
-          <BookOpen className="h-5 w-5 text-gd" />
-        </span>
-        <h1 className="text-lg font-bold">Knowledge feed</h1>
-        <p className="max-w-64 text-sm leading-relaxed text-muted-foreground">
-          Prep content from committees lands here — coming in a later phase.
-        </p>
-      </div>
-      <BottomNav isAdmin={profile?.is_crisp_admin || profile?.is_sac} />
+      <KnowledgeFeedClient initialPosts={typedPosts} canPost={canPost} />
+      <BottomNav isAdmin={isAdmin} />
     </div>
   )
 }

@@ -118,6 +118,45 @@ export const FEEDBACK_TAGS_IMPROVE = [
   'Low energy', 'Missed key points', 'Needed more structure',
 ]
 
+export const FUNCTION_TAGS = ['Finance', 'Marketing', 'Consulting', 'HR', 'Operations', 'General Mgmt', 'Strategy'] as const
+export type FunctionTag = typeof FUNCTION_TAGS[number]
+
+export interface KnowledgePost {
+  id: string
+  author_id: string
+  title: string
+  body: string
+  tags: string[]
+  function_tag: string | null
+  is_pinned: boolean
+  created_at: string
+  updated_at: string
+  author_name?: string
+}
+
+export interface Doubt {
+  id: string
+  author_id: string
+  question: string
+  function_tag: string | null
+  is_resolved: boolean
+  vote_count: number
+  answer_count: number
+  created_at: string
+  author_name: string
+  i_voted: boolean
+}
+
+export interface DoubtAnswer {
+  id: string
+  doubt_id: string
+  author_id: string
+  body: string
+  is_accepted: boolean
+  created_at: string
+  author_name?: string
+}
+
 /** Slot details returned by confirm_slot — drives the email body + calendar link. */
 export interface ConfirmSlotSlot {
   id: string
