@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import QRCode from 'react-qr-code'
-import { Check, Loader2, RefreshCw, Square, Users, MessageSquare, X } from 'lucide-react'
+import { Check, Loader2, RefreshCw, Square, Users, MessageSquare, X, UserCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
@@ -215,6 +215,7 @@ export function CockpitClient({ slot: initialSlot, me }: { slot: SlotDetail; me:
   const [finalizing, setFinalizing] = useState(false)
   const [feedbackFor, setFeedbackFor] = useState<RosterEntry | null>(null)
   const [feedbackDone, setFeedbackDone] = useState<Set<string>>(new Set())
+  const [markingAttended, setMarkingAttended] = useState<Set<string>>(new Set())
   const rotateRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [secondsLeft, setSecondsLeft] = useState(0)
   const supabase = createClient()
@@ -293,6 +294,23 @@ export function CockpitClient({ slot: initialSlot, me }: { slot: SlotDetail; me:
   async function manualRotate() {
     await rotate()
     toast('QR refreshed')
+  }
+
+  async function markAttended(userId: string, name: string) {
+    setMarkingAttended((s) => new Set([...s, userId]))
+    const { data, error } = await supabase.rpc('mark_attended_direct', {
+      p_slot_id: slot.id,
+      p_user_id: userId,
+    })
+    setMarkingAttended((s) => { const n = new Set(s); n.delete(userId); return n })
+    if (error || (data?.error && data.error !== 'already_attended')) {
+      toast.error(`Could not mark ${name.split(' ')[0]} as attended.`)
+      return
+    }
+    toast.success(`${name.split(' ')[0]} marked as attended.`)
+    // Refresh roster
+    const { data: fresh } = await supabase.rpc('get_slot_detail', { p_slot_id: slot.id })
+    if (fresh && !fresh.error) setSlot(fresh as SlotDetail)
   }
 
   const checkinUrl = typeof window !== 'undefined'
@@ -394,7 +412,7 @@ export function CockpitClient({ slot: initialSlot, me }: { slot: SlotDetail; me:
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground text-center max-w-xs">
-                  Students scan this QR to mark attendance. Rotates automatically every minute.
+                  Slot share QR. For attendance: tap the <strong>✓</strong> button next to each participant in the Roster, or scan their personal QR from <code>/myqr/[slotId]</code>.
                 </p>
               </div>
 
@@ -445,6 +463,21 @@ export function CockpitClient({ slot: initialSlot, me }: { slot: SlotDetail; me:
                      r.status === 'no_show'  ? 'No-show' : `Seat #${r.position}`}
                   </p>
                 </div>
+                {/* mark attended — visible while live, only for confirmed seats */}
+                {isLive && r.status === 'confirmed' && (
+                  <button
+                    onClick={() => markAttended(r.user_id, r.name)}
+                    disabled={markingAttended.has(r.user_id)}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-success/20 hover:text-success transition-colors disabled:opacity-50"
+                    aria-label={`Mark ${r.name} as present`}
+                    title="Mark as present"
+                  >
+                    {markingAttended.has(r.user_id)
+                      ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      : <UserCheck className="h-3.5 w-3.5" />}
+                  </button>
+                )}
+
                 {/* feedback button — visible after session ends */}
                 {isCompleted && r.status !== 'no_show' && r.user_id !== me.id && (
                   <button

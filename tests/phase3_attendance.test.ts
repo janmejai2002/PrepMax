@@ -187,54 +187,40 @@ describe('rotate_token', () => {
   })
 })
 
-describe('check_in', () => {
-  let goodToken: string
-
-  beforeAll(async () => {
-    // Rotate via host to get a fresh token (adminSb lacks auth.uid() for the auth check)
-    const { data } = await hostClient.rpc('rotate_token', { p_slot_id: slotId })
-    goodToken = data?.token ?? ''
-  })
-
-  it('junior checks in with valid token → attended', async () => {
+describe('check_in (disabled — self-check-in permanently blocked)', () => {
+  it('junior calling check_in returns self_checkin_disabled', async () => {
     const { data, error } = await juniorClient.rpc('check_in', {
       p_slot_id: slotId,
-      p_token:   goodToken,
+      p_token:   'ANYTOKEN',
+    })
+    expect(error).toBeNull()
+    expect(data.error).toBe('self_checkin_disabled')
+  })
+
+  it('host calling check_in also returns self_checkin_disabled', async () => {
+    const { data } = await hostClient.rpc('check_in', {
+      p_slot_id: slotId,
+      p_token:   'ANYTOKEN',
+    })
+    expect(data.error).toBe('self_checkin_disabled')
+  })
+
+  // Mark junior attended via the new secure path so submit_feedback + finalize tests pass
+  it('host marks junior attended via mark_attended_direct (new secure path)', async () => {
+    const { data, error } = await hostClient.rpc('mark_attended_direct', {
+      p_slot_id: slotId,
+      p_user_id: juniorId,
     })
     expect(error).toBeNull()
     expect(data.status).toBe('attended')
 
     const { data: enroll } = await adminSb
       .from('enrollments')
-      .select('status, attended_at')
+      .select('status, attended_at, checked_in_by')
       .eq('slot_id', slotId).eq('user_id', juniorId).single()
     expect(enroll!.status).toBe('attended')
     expect(enroll!.attended_at).toBeTruthy()
-  })
-
-  it('second check-in is idempotent → already_attended', async () => {
-    const { data, error } = await juniorClient.rpc('check_in', {
-      p_slot_id: slotId,
-      p_token:   goodToken,
-    })
-    expect(error).toBeNull()
-    expect(data.status).toBe('already_attended')
-  })
-
-  it('invalid token returns error', async () => {
-    const { data } = await juniorClient.rpc('check_in', {
-      p_slot_id: slotId,
-      p_token:   'BADTOK',
-    })
-    expect(data.error).toBe('invalid_or_expired_token')
-  })
-
-  it('outsider not enrolled returns not_enrolled', async () => {
-    const { data } = await outsiderClient.rpc('check_in', {
-      p_slot_id: slotId,
-      p_token:   goodToken,
-    })
-    expect(data.error).toBe('not_enrolled')
+    expect(enroll!.checked_in_by).toBe(hostId)
   })
 })
 

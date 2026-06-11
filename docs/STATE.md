@@ -5,7 +5,7 @@
 ---
 
 ## Current Phase
-**Phase 6 — Complete. All phases 1-6 shipped. 58/58 tests green. Product is functionally complete.**
+**Phase 6 — Complete + Attendance Hardened. All phases 1-6 shipped. 112/112 tests green.**
 
 ## Status
 
@@ -31,6 +31,8 @@
 | Migration 016 | ✅ Done | BEFORE INSERT trigger: b25NNN → year=second (senior), b26NNN → year=first (junior) |
 | Migration 017 | ✅ Done | bio field + is_crisp_member flag + year nullable (committee) + get_public_profile RPC + @xlri.ac.in trigger |
 | Migration 018 | ✅ Done | Fix doubts_feed: LEFT JOIN replaces EXISTS subquery so i_voted serialises correctly in PostgREST |
+| Migration 019 | ✅ Done | Attendance hardening: app_config (server-side HMAC key), used_checkin_tokens (replay prevention), generate_checkin_token, mark_attended_by_token, mark_attended_direct RPCs; check_in disabled |
+| Migration 020 | ✅ Done | Fix pgcrypto search_path: add `extensions` to SET search_path so hmac/digest functions resolve |
 | /profile/[id] | ✅ Done | Public profile page: juniors show stats, seniors show hosting stats + open slots with join links |
 | /login | ✅ Done | Google OAuth + magic link |
 | /onboarding | ✅ Done | Name/phone/whatsapp/year/batch/section/roll/mentor |
@@ -38,7 +40,8 @@
 | /admin/stats | ✅ Done | CRISP daily stats grid + Room-Now realtime board |
 | /slots/[id] | ✅ Done | Full slot detail, join/leave/confirm/start/cancel, roster, review box |
 | /cockpit/[slotId] | ✅ Done | Host cockpit: QR code, rotating tokens (55s), realtime attendance roster, feedback drawer |
-| /checkin | ✅ Done | QR check-in landing page (attended/already/error states) |
+| /checkin | ✅ Done | Now redirects to /myqr/[slotId] — self-check-in permanently disabled |
+| /myqr/[slotId] | ✅ Done | Junior personal QR page: HMAC-signed token, 90s TTL, auto-rotates |
 | /profile | ✅ Done | Profile info + received feedback aggregates + per-session cards |
 | /mentor | ✅ Done | Mentor dashboard: assigned juniors with 360° stats |
 | /knowledge | ✅ Done | Committee-published prep content feed with function filters, expandable posts, post form |
@@ -49,7 +52,7 @@
 | dev seed users | ✅ Done | 4 test accounts via `npx tsx scripts/seed-dev-users.ts` |
 | Vercel deploy | ✅ Done | https://prep-max-alpha.vercel.app |
 | GitHub repo | ✅ Done | https://github.com/janmejai2002/PrepMax |
-| Tests | ✅ Done | 93/93 passing |
+| Tests | ✅ Done | 112/112 passing (19 new fraud-path tests) |
 | lib/email-role.ts | ✅ Done | inferYearFromEmail + isCommitteeEmail + isSacEmail + isCrispEmail |
 
 ## Dev Test Credentials
@@ -118,3 +121,4 @@ Magic link works right now without any extra config.
 | 2026-06-11 | Session 9: Phase 4+5+6 — outbox/notifications (migration 011, Edge Function), share page, knowledge feed, doubts Q&A (migrations 012+013), anonymous reviews (014), analytics views (015), mentor dashboard, admin stats + Room-Now board. 58/58 tests. Product complete. |
 | 2026-06-11 | Session 10: Email→role mapping. Migration 016 (BEFORE INSERT trigger). lib/email-role.ts. Onboarding form locks year for b25/b26 emails. Dev seed + dev-login updated to b25/b26 addresses. 63/63 tests. |
 | 2026-06-11 | Session 11: A) 23 K+D integration tests — found + fixed doubts_feed i_voted bug (EXISTS→LEFT JOIN, migration 018). B) /profile/[id] public profile page (migration 017 get_public_profile RPC). C) Committee role model: year nullable, is_crisp_member flag, @xlri.ac.in trigger, isCommitteeEmail, crisp@/sacdelhi@ dev accounts. 93/93 tests. |
+| 2026-06-11 | Session 12: Attendance hardening (migrations 019+020). THREAT MODEL: junior cannot self-check-in. NEW: generate_checkin_token (HMAC-SHA256, 90s TTL, per-junior) + mark_attended_by_token (host-only, HMAC verify + replay prevention) + mark_attended_direct (host taps roster). check_in() disabled. /myqr/[slotId] junior QR page. Cockpit "Mark present" buttons. 19 fraud-path tests. 112/112 tests. |
