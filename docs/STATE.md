@@ -29,6 +29,9 @@
 | Migration 014 | ✅ Done | reviews table (NO user_id — Iron Rule #7), dedup_hash, batch release (≥3), submit_review + get_my_slot_reviews RPCs |
 | Migration 015 | ✅ Done | junior_profile_360 view + daily_stats view + room_now view |
 | Migration 016 | ✅ Done | BEFORE INSERT trigger: b25NNN → year=second (senior), b26NNN → year=first (junior) |
+| Migration 017 | ✅ Done | bio field + is_crisp_member flag + year nullable (committee) + get_public_profile RPC + @xlri.ac.in trigger |
+| Migration 018 | ✅ Done | Fix doubts_feed: LEFT JOIN replaces EXISTS subquery so i_voted serialises correctly in PostgREST |
+| /profile/[id] | ✅ Done | Public profile page: juniors show stats, seniors show hosting stats + open slots with join links |
 | /login | ✅ Done | Google OAuth + magic link |
 | /onboarding | ✅ Done | Name/phone/whatsapp/year/batch/section/roll/mentor |
 | /admin/rooms | ✅ Done | CRISP-admin-only room management |
@@ -46,20 +49,19 @@
 | dev seed users | ✅ Done | 4 test accounts via `npx tsx scripts/seed-dev-users.ts` |
 | Vercel deploy | ✅ Done | https://prep-max-alpha.vercel.app |
 | GitHub repo | ✅ Done | https://github.com/janmejai2002/PrepMax |
-| Tests | ✅ Done | 63/63 passing |
-| lib/email-role.ts | ✅ Done | inferYearFromEmail utility (b25→second, b26→first, else null) |
+| Tests | ✅ Done | 93/93 passing |
+| lib/email-role.ts | ✅ Done | inferYearFromEmail + isCommitteeEmail + isSacEmail + isCrispEmail |
 
 ## Dev Test Credentials
 
 Run `npx tsx scripts/seed-dev-users.ts` to create these accounts (idempotent).
-Emails follow the XLRI batch-year convention (b26 = junior, b25 = senior):
 
 | Email | Type | Password |
 |---|---|---|
 | `b26001@astra.xlri.ac.in` | Junior (first-year, no flags) | `PrepMax@dev1` |
 | `b25001@astra.xlri.ac.in` | Senior (can host GD+PI, is_mentor) | `PrepMax@dev1` |
-| `b25002@astra.xlri.ac.in` | CRISP Admin (all flags + is_crisp_admin) | `PrepMax@dev1` |
-| `b25003@astra.xlri.ac.in` | SAC Admin (all flags + is_crisp_admin + is_sac) | `PrepMax@dev1` |
+| `crisp@xlri.ac.in` | CRISP committee shared login (is_committee, year=null) | `PrepMax@dev1` |
+| `sacdelhi@xlri.ac.in` | SAC shared login (is_committee + is_sac, year=null) | `PrepMax@dev1` |
 
 Dev login URL (local): http://localhost:3000/dev-login
 Dev login URL (prod): N/A — disabled in production
@@ -115,3 +117,4 @@ Magic link works right now without any extra config.
 | 2026-06-11 | Session 8: Phase 3 (attendance + cockpit) — migrations 009+010, slot detail view, cockpit with QR tokens, check-in page, feedback drawer, profile feedback section, dev-login. 58/58 tests. |
 | 2026-06-11 | Session 9: Phase 4+5+6 — outbox/notifications (migration 011, Edge Function), share page, knowledge feed, doubts Q&A (migrations 012+013), anonymous reviews (014), analytics views (015), mentor dashboard, admin stats + Room-Now board. 58/58 tests. Product complete. |
 | 2026-06-11 | Session 10: Email→role mapping. Migration 016 (BEFORE INSERT trigger). lib/email-role.ts. Onboarding form locks year for b25/b26 emails. Dev seed + dev-login updated to b25/b26 addresses. 63/63 tests. |
+| 2026-06-11 | Session 11: A) 23 K+D integration tests — found + fixed doubts_feed i_voted bug (EXISTS→LEFT JOIN, migration 018). B) /profile/[id] public profile page (migration 017 get_public_profile RPC). C) Committee role model: year nullable, is_crisp_member flag, @xlri.ac.in trigger, isCommitteeEmail, crisp@/sacdelhi@ dev accounts. 93/93 tests. |
