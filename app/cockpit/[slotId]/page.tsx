@@ -17,9 +17,10 @@ export default async function CockpitPage({ params }: Props) {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: detail, error } = await supabase.rpc('get_slot_detail', {
-    p_slot_id: slotId,
-  })
+  const [{ data: detail, error }, { data: profile }] = await Promise.all([
+    supabase.rpc('get_slot_detail', { p_slot_id: slotId }),
+    supabase.from('profiles').select('name').eq('id', user.id).single(),
+  ])
 
   if (error || !detail || detail.error) notFound()
 
@@ -29,12 +30,6 @@ export default async function CockpitPage({ params }: Props) {
   if (!slot.is_host && !slot.is_judge && !slot.is_admin) {
     redirect(`/slots/${slotId}`)
   }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('name')
-    .eq('id', user.id)
-    .single()
 
   return (
     <div className="min-h-screen bg-background">

@@ -61,7 +61,12 @@
 | SAC notify button | ✅ Done | "Notify CRISP" button on /admin/rooms (SAC-only); server action inserts outbox events for all is_committee members |
 | BottomNav gating | ✅ Done | isCommittee prop: committee sees Knowledge+Profile only; committee admin adds Admin tab |
 | lib/supabase/service.ts | ✅ Done | Service-role client for cached server queries (outside request scope) |
-| Navigation perf | ✅ Done | loading.tsx on 8 routes + Promise.all parallel queries + knowledge 60s cache; ~5s→instant skeleton |
+| Navigation perf | ✅ Done | loading.tsx on 11 routes (added cockpit/myqr/s) + home page profile+feed now parallel (−1 serial hop) + cockpit queries parallel; ~5s→instant skeleton |
+| Migration 022 | ✅ Done | slots.reminder_sent_at + insert_slot_reminders() + express_interest/confirm_match write outbox |
+| Email: interest_expressed | ✅ Done | express_interest() writes outbox row → junior notified when senior marks interest (idempotent) |
+| Email: match_confirmed | ✅ Done | confirm_match() writes 2 outbox rows → junior (match confirmation) + senior (selection + junior contact) |
+| Email: slot_reminder_30m | ✅ Done | insert_slot_reminders() SQL function queued by drain-notifications at top of each run; dedup via reminder_sent_at |
+| drain-notifications v2 | ✅ Done | Templates for interest_expressed + match_confirmed (junior/senior) + slot_reminder_30m; schedules reminders then drains |
 
 ## Dev Test Credentials
 
@@ -85,12 +90,12 @@ Dev login URL (prod): https://prep-max-alpha.vercel.app/dev-login (ALLOW_DEV_LOG
    Also add: `https://prep-max-alpha.vercel.app/auth/callback` to Supabase's redirect allow-list
 3. `supabase.com/dashboard/project/fzohmolumyfupffkbxug/auth/providers` → Enable Google → paste Client ID + Secret
 
-**Resend email** — to send actual notification emails:
+**Resend email** — to send actual notification emails (all code is live; just needs secrets):
 1. Create account at resend.com, add domain `prepmax.xlri.ac.in`
 2. Get API key
-3. Set `RESEND_API_KEY` in Supabase Edge Function secrets
+3. Set `RESEND_API_KEY` in Supabase Edge Function secrets (`supabase.com/dashboard/project/fzohmolumyfupffkbxug/functions/drain-notifications/secrets`)
 4. Set `APP_URL=https://prep-max-alpha.vercel.app` in Edge Function secrets
-5. Schedule `drain-notifications` Edge Function to run every minute (Supabase cron)
+5. Schedule `drain-notifications` to run every minute via Supabase cron (`supabase.com/dashboard/project/fzohmolumyfupffkbxug/integrations/cron`) — this one function now handles both reminder scheduling and email draining
 
 Magic link works right now without any extra config.
 
@@ -109,10 +114,9 @@ Magic link works right now without any extra config.
 
 ## Exact Next Step (open this at the start of the next session)
 
-1. **Enable email notifications** (user action): Set `RESEND_API_KEY` + `APP_URL` in Supabase Edge Function secrets, then schedule `drain-notifications` as a Supabase cron every 60s.
-2. **Extend push plan** — user confirmed plan; implement new outbox event types (interest_expressed, match_confirmed, slot_reminder_30m) + reminder cron.
-3. **Phone-based Playwright E2E** — run `/ship-check` at 390×844. Fix any regressions.
-4. **Phase 7 Hardening** — RLS audit, Lighthouse mobile pass, Sentry stub, RUNBOOK.md.
+1. **Enable email notifications** (user action): Set `RESEND_API_KEY` + `APP_URL` in Supabase Edge Function secrets, then schedule `drain-notifications` cron every 60s — see "One action still needed" above.
+2. **Phone-based Playwright E2E** — run `/ship-check` at 390×844. Fix any regressions.
+3. **Phase 7 Hardening** — RLS audit, Lighthouse mobile pass, Sentry stub, RUNBOOK.md.
 
 ## Possible Future Enhancements (V2)
 - No-show penalty: 24h booking cooldown after 2 no-shows in 7 days (config-flagged — data path already built)
@@ -142,3 +146,4 @@ Magic link works right now without any extra config.
 | 2026-06-11 | Session 15: Committee gating audit + SAC notify. Gated /, /requests, /my-requests, /doubts from @xlri.ac.in accounts → redirect /knowledge. BottomNav isCommittee prop: committee sees Knowledge+Profile; +Admin tab for crisp_admin/sac. SAC "Notify CRISP" button on /admin/rooms (server action app/admin/rooms/actions.ts → outbox). Fixed pre-existing formatSlotTime(x,x) TS bug in profile/[id]. 13 new committee-gating unit tests. 145/145 tests. |
 | 2026-06-11 | Session 16: Shareable test deployment. Mirrored b25349 flags → b25426 in Supabase (can_host_gd/pi, is_mentor, is_committee, is_crisp_admin, is_sac). Re-gated /dev-login behind ALLOW_DEV_LOGIN=true env flag (export const dynamic='force-dynamic' + .trim() for robustness). Fixed pre-existing onboarding-form zodResolver TS error (blocked Vercel build). Seeded 4 dev accounts against prod Supabase. Live: https://prep-max-alpha.vercel.app/dev-login. 145/145 tests. |
 | 2026-06-11 | Session 17: User feedback fixes. BLOCKING: @xlri.ac.in login blocked by domain check in login-client.tsx + auth/callback — fixed both to allow @xlri.ac.in. Dev-login link now shows on /login when ALLOW_DEV_LOGIN=true. Committee feed: removed redirect-to-knowledge from / and /doubts so committee (and senior+committee hybrids like b25349) can browse Slots feed read-only + Doubts. Committee BottomNav: Feed|Knowledge|Doubts|[Admin]|Profile. BottomNav: Mentor/Admin now adds as 6th tab (Profile always kept). Role Management Portal: /admin/roles with 7-flag toggles per user (CRISP-admin/SAC gated). Admin nav: Roles tab added to rooms+stats pages. Perf: loading.tsx for /admin/rooms and /admin/roles. canCreateSlot separated from canManageRooms. Push notifications plan delivered (item 6). 145/145 tests. |
+| 2026-06-12 | Session 18: Email path complete. Migration 022: slots.reminder_sent_at + insert_slot_reminders() SQL function + express_interest/confirm_match updated to write outbox. drain-notifications v2: templates for interest_expressed, match_confirmed (junior+senior), slot_reminder_30m; calls insert_slot_reminders() at top of each run. Perf: loading.tsx added to cockpit/myqr/s routes; home page collapsed profile+feed queries into single parallel Promise.all (−1 serial hop); cockpit queries parallelised. 153/153 tests. User must add RESEND_API_KEY + schedule drain cron to activate emails. |
