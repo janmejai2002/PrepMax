@@ -2,8 +2,10 @@ import { redirect } from 'next/navigation'
 import { DevLoginClient } from './dev-login-client'
 
 export default function DevLoginPage() {
-  // Hard gate: this page does not exist in production
-  if (process.env.NODE_ENV === 'production') {
+  // Only available when ALLOW_DEV_LOGIN=true is set in the environment.
+  // This lets us enable it for stakeholder test deployments without exposing
+  // it in real production (where the env var is simply absent).
+  if (process.env.ALLOW_DEV_LOGIN !== 'true') {
     redirect('/login')
   }
 
