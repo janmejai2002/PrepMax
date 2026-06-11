@@ -57,6 +57,8 @@
 | GitHub repo | ✅ Done | https://github.com/janmejai2002/PrepMax |
 | Tests | ✅ Done | 132/132 passing (20 new slot-request tests; fileParallelism=false prevents auth rate-limit flakes) |
 | lib/email-role.ts | ✅ Done | inferYearFromEmail + isCommitteeEmail + isSacEmail + isCrispEmail |
+| lib/supabase/service.ts | ✅ Done | Service-role client for cached server queries (outside request scope) |
+| Navigation perf | ✅ Done | loading.tsx on 8 routes + Promise.all parallel queries + knowledge 60s cache; ~5s→instant skeleton |
 
 ## Dev Test Credentials
 
@@ -102,6 +104,12 @@ Magic link works right now without any extra config.
 **Phase 5** — Knowledge + Doubts (committee feed with filters, Q&A with upvotes/answers/accept)
 **Phase 6** — Reviews + Dashboards (anonymous reviews with k-anonymity, mentor 360° dashboard, CRISP stats, Room-Now board)
 
+## Exact Next Step (open this at the start of the next session)
+
+1. **Phone-based Playwright E2E** — run `/ship-check` (the canonical journey: host creates slot → junior joins under contention → QR check-in → finalized feedback on profile → review posted) at 390×844 viewport with Playwright. Fix any regressions found. This is the last formal gate before the app can go live with real users.
+2. **Domain-based home redirect** — when SAC/CRISP logs in, redirect them straight to `/admin/rooms` or `/knowledge` instead of the slots feed (committee members don't need the junior GD/PI feed as their landing page). One `if (isCommittee) redirect(...)` in `app/page.tsx`.
+3. **Phase 7 Hardening** (see SPEC.md Part D) — RLS audit, Lighthouse mobile pass, Sentry stub, RUNBOOK.md.
+
 ## Possible Future Enhancements (V2)
 - No-show penalty: 24h booking cooldown after 2 no-shows in 7 days (config-flagged — data path already built)
 - Review release: weekly batch cadence (currently N≥3)
@@ -126,4 +134,4 @@ Magic link works right now without any extra config.
 | 2026-06-11 | Session 11: A) 23 K+D integration tests — found + fixed doubts_feed i_voted bug (EXISTS→LEFT JOIN, migration 018). B) /profile/[id] public profile page (migration 017 get_public_profile RPC). C) Committee role model: year nullable, is_crisp_member flag, @xlri.ac.in trigger, isCommitteeEmail, crisp@/sacdelhi@ dev accounts. 93/93 tests. |
 | 2026-06-11 | Session 12: Attendance hardening (migrations 019+020). THREAT MODEL: junior cannot self-check-in. NEW: generate_checkin_token (HMAC-SHA256, 90s TTL, per-junior) + mark_attended_by_token (host-only, HMAC verify + replay prevention) + mark_attended_direct (host taps roster). check_in() disabled. /myqr/[slotId] junior QR page. Cockpit "Mark present" buttons. 19 fraud-path tests. 112/112 tests. |
 | 2026-06-11 | Session 13: Junior-request flow (migration 021). slot_requests + interests tables. 7 RPCs: create/cancel_slot_request, express/retract_interest, confirm_match, get_open_requests, get_my_requests. /requests senior feed (anonymous, "I'm available" toggle). /my-requests junior page (post form, interested seniors list, WhatsApp intro, confirm match). BottomNav updated with Requests tab (seniors→/requests, juniors→/my-requests). fileParallelism=false in vitest.config. 20 new tests. 132/132 tests. |
-| 2026-06-11 | Navigation perf: added loading.tsx for 8 routes (knowledge/doubts/profile/requests/my-requests/slots/[id]/profile/[id]/mentor/admin/stats). Parallelized serial queries on knowledge+doubts+profile+requests+my-requests pages with Promise.all. Knowledge posts cached 60s via unstable_cache + service client. lib/supabase/service.ts created. Before: ~5s blank screen. After: instant skeleton on nav tap, ~1-2s for data. |
+| 2026-06-11 | Session 14: Navigation perf. Root causes: no loading.tsx on 8 routes (blank white screen), serial Supabase waterfall queries (3× round-trips), knowledge posts re-fetched every request. Fixes: loading.tsx for 8 routes (skeleton appears <50ms), Promise.all parallel queries on 5 pages, unstable_cache(60s) on knowledge posts via service client. lib/supabase/service.ts. Before: ~5s blank screen. After: instant skeleton, data in ~1-2s. 132/132 tests green. |
