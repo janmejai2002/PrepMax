@@ -5,7 +5,7 @@
 ---
 
 ## Current Phase
-**Phase 6 — Complete + is_crisp consolidation done. 4-role model: JUNIOR / SENIOR / SENIOR+CRISP / SAC. 152/152 tests green.**
+**Phase 7 — Navigation polish + cockpit revamp done. Sticky app header with avatar/role badge. Floating pill nav (4 tabs/role). Cockpit hardened. 152/152 tests green.**
 
 ## Status
 
@@ -40,7 +40,7 @@
 | /admin/rooms | ✅ Done | CRISP-admin-only room management |
 | /admin/stats | ✅ Done | CRISP daily stats grid + Room-Now realtime board |
 | /slots/[id] | ✅ Done | Full slot detail, join/leave/confirm/start/cancel, roster, review box |
-| /cockpit/[slotId] | ✅ Done | Host cockpit: QR code, rotating tokens (55s), realtime attendance roster, feedback drawer |
+| /cockpit/[slotId] | ✅ Done | Host cockpit: QR code, rotating tokens (55s), realtime attendance roster, feedback drawer; token-reload fix; 2-step end-confirm; live feedback; feedback count |
 | /checkin | ✅ Done | Now redirects to /myqr/[slotId] — self-check-in permanently disabled |
 | /myqr/[slotId] | ✅ Done | Junior personal QR page: HMAC-signed token, 90s TTL, auto-rotates |
 | /requests | ✅ Done | Senior-only anonymous practice request feed; "I'm available" toggle |
@@ -70,6 +70,9 @@
 | Email: match_confirmed | ✅ Done | confirm_match() writes 2 outbox rows → junior (match confirmation) + senior (selection + junior contact) |
 | Email: slot_reminder_30m | ✅ Done | insert_slot_reminders() SQL function queued by drain-notifications at top of each run; dedup via reminder_sent_at |
 | drain-notifications v2 | ✅ Done | Templates for interest_expressed + match_confirmed (junior/senior) + slot_reminder_30m; schedules reminders then drains |
+| AppHeader | ✅ Done | Sticky 52px header; PrepMax wordmark left; role badge + avatar right; dropdown: My Profile + Sign out |
+| BottomNav v2 | ✅ Done | Floating pill (bg-card/95, blur, rounded-2xl, border, shadow); active = gd-soft bg + gd colour; max 4 tabs/role: Junior/Senior=Feed·Requests·Knowledge·Doubts, CRISP=Feed·Requests·Knowledge·Admin, SAC=Rooms |
+| seed-dev-feedback.ts | ✅ Done | Creates completed GD slot + attended junior + feedback row for cockpit UI testing; run npx tsx scripts/seed-dev-feedback.ts |
 
 ## Dev Test Credentials
 
@@ -118,10 +121,11 @@ Magic link works right now without any extra config.
 ## Exact Next Step (open this at the start of the next session)
 
 1. **Enable email notifications** (user action): Set `RESEND_API_KEY` + `APP_URL` in Supabase Edge Function secrets, then schedule `drain-notifications` cron every 60s — see "One action still needed" above.
-2. **GD Live Session (Cockpit) Revamp** — harden /cockpit flow end-to-end, improve UX, add dev-only dummy feedback seed.
-3. **Clash audit continuation** — leave_slot waitlist-promotion edge case + confirm_match senior scheduling overlap check.
-4. **Phone-based Playwright E2E** — run `/ship-check` at 390×844 for each role (junior, senior, crisp, sac). Fix any regressions.
-5. **Phase 7 Hardening** — RLS audit, Lighthouse mobile pass, Sentry stub, RUNBOOK.md.
+2. **Verify nav + cockpit on live app** — open https://prep-max-alpha.vercel.app, log in as each dev user (junior/senior/crisp/sac), confirm header, pill nav, and tab layout look correct.
+3. **Seed cockpit test data**: `npx tsx scripts/seed-dev-feedback.ts` → verify Dev Senior cockpit shows completed state + feedback buttons → verify Dev Junior profile shows feedback cards.
+4. **Clash audit continuation** — leave_slot waitlist-promotion edge case + confirm_match senior scheduling overlap check.
+5. **Phone-based Playwright E2E** — run `/ship-check` at 390×844 for each role (junior, senior, crisp, sac). Fix any regressions.
+6. **Phase 7 Hardening** — RLS audit, Lighthouse mobile pass, Sentry stub, RUNBOOK.md.
 
 ## Possible Future Enhancements (V2)
 - No-show penalty: 24h booking cooldown after 2 no-shows in 7 days (config-flagged — data path already built)
@@ -154,3 +158,4 @@ Magic link works right now without any extra config.
 | 2026-06-12 | Session 18: Email path complete. Migration 022: slots.reminder_sent_at + insert_slot_reminders() SQL function + express_interest/confirm_match updated to write outbox. drain-notifications v2: templates for interest_expressed, match_confirmed (junior+senior), slot_reminder_30m; calls insert_slot_reminders() at top of each run. Perf: loading.tsx added to cockpit/myqr/s routes; home page collapsed profile+feed queries into single parallel Promise.all (−1 serial hop); cockpit queries parallelised. 153/153 tests. User must add RESEND_API_KEY + schedule drain cron to activate emails. BUGFIX: proxy.ts (Next.js 16 middleware layer) was missing @xlri.ac.in in isEmailAllowed — committee accounts were being signed out on every request. Fixed + deployed. |
 | 2026-06-12 | Session 19: Role/view reconciliation + scheduling clash detection + mentee monitor. Migration 023: join_slot v4 (seniors blocked + junior time-conflict check), edit_slot v2 (room double-booking on time-change), create_slot RPC (host-overlap + room-overlap checks, co-judges bundled), get_all_juniors/assign_mentee/unassign_mentee RPCs. BottomNav: SAC→single Rooms tab, CRISP member→Rooms+Monitor tabs. SAC redirected from / to /admin/rooms. Senior join button hidden (canJoin prop thread through SlotsFeed→SlotCard + me.isSenior in slot-detail-client). /admin/rooms now accessible to is_crisp_member. New /crisp-monitor page: mentee list with search/filter, assign/unassign buttons. host-slot-sheet.tsx migrated from direct INSERT to create_slot RPC. 153/153 tests. |
 | 2026-06-12 | Session 20: is_crisp consolidation. Migration 024: collapsed is_mentor+is_crisp_member+is_crisp_admin+is_committee → single is_crisp boolean. 4-role model: JUNIOR (b26), SENIOR (b25), SENIOR+CRISP (is_crisp), SAC (is_sac). Migration 025: fixed join_slot v6 (v5 had NULL position + wrong 'waitlisted' status) + fixed express_interest (referenced dropped columns). Validation fixes: knowledge post (title≥3/body≥10) and doubts (min 5 chars) now validate client-side with friendly errors. All 20 app pages, BottomNav, scripts, all 13 test files updated. committee-gating tests rewritten for new model. 152/152 tests. |
+| 2026-06-12 | Session 21: Task 1 (analysis) confirm_match traced end-to-end + 5 bugs/gaps documented. Task 2: AppHeader (sticky 52px, role badge+avatar, dropdown sign-out/profile) + BottomNav redesigned as floating pill (bg-card/95 blur, active=gd-soft bg+icon+label, inactive=50% muted) + Profile tab removed from all roles + CRISP capped at 4 tabs (Feed/Requests/Knowledge/Admin) + all 12 pages updated (missing name selects fixed). Task 3: Cockpit hardened (token-reload fix, 2-step end-confirm, live feedback, feedback count stat, feedback summary strip, clearer QR text, better pre-start card) + seed-dev-feedback.ts (completed slot + attended enrollment + feedback rows). No schema changes. 152/152 tests. |
