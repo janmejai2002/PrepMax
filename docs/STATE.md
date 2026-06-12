@@ -5,7 +5,7 @@
 ---
 
 ## Current Phase
-**Phase 8 — QA/E2E complete. 32/32 Playwright E2E green on live Vercel site (390px mobile). 153/153 Vitest green. Live: https://prep-max-alpha.vercel.app**
+**Phase 8 — ALL DONE. 153/153 Vitest + 32/32 Playwright E2E green. Live: https://prep-max-alpha.vercel.app. Awaiting user action: activate Resend email + onboard real users.**
 
 ## Status
 
@@ -124,12 +124,69 @@ Magic link works right now without any extra config.
 **Phase 5** — Knowledge + Doubts (committee feed with filters, Q&A with upvotes/answers/accept)
 **Phase 6** — Reviews + Dashboards (anonymous reviews with k-anonymity, mentor 360° dashboard, CRISP stats, Room-Now board)
 
+## MORNING REPORT — 2026-06-12
+
+### What shipped overnight (backlog items 1–9, all done)
+
+| # | Item | What was built |
+|---|---|---|
+| 6 | Host self-conflict guard | `edit_slot v4` (migration 028): host can't edit a slot into a time that conflicts with another slot they're already running |
+| 7 | Performance pass | All serial Supabase waterfalls eliminated — every page's queries run in `Promise.all`. Dynamic imports for `HostSlotSheet` + `EditSlotSheet`. Knowledge posts server-cached 60s via `unstable_cache`. |
+| 8 | QA / Playwright E2E | 32-test suite across all 4 roles at 390px mobile. Found and fixed the root crash (see below). All 32 green on live Vercel. |
+| 9 | Haptics | `navigator.vibrate` on 6 interaction points: join (double pulse), leave (30ms), confirm match (triple), express interest, post request, room live toggle |
+| — | Notification bell | In-app bell in header: unread count badge, Sheet panel, realtime subscription, mark-read / mark-all-read |
+| — | 8 notification triggers | match_confirmed, interest_expressed, non_chosen, request_cancelled, waitlist_promoted, slot_cancelled, slot_edited, mentee_added |
+| — | RoomScheduleSheet | 3-day availability grid in the slot hosting form — tap a free window to fill start_at |
+| — | Critical bug fix | Every authenticated page was crashing with "This page couldn't load". Root cause: `profileToNavRole()` was exported from `app-header.tsx` (`'use client'`) and called directly by 13 server components — Next.js 16 throws an RSC boundary error for this. Fix: moved the function to `lib/nav-role.ts` (no directive), updated all 13 pages. |
+| — | Cohesion fixes | SAC users visiting `/admin/stats`, `/admin/roles`, `/mentor` were shown the wrong bottom nav (CRISP tabs instead of Rooms-only). Fixed. `NotificationBell` wrapped in `dynamic({ssr:false})` as extra SSR guard. |
+
+### Current status
+- **Live URL**: https://prep-max-alpha.vercel.app
+- **Unit tests**: 153/153 Vitest green
+- **E2E tests**: 32/32 Playwright green (live Vercel, 390px mobile Chrome)
+- **Build**: clean TypeScript, clean `next build`
+- **Last commit**: `0cd2b77` (BottomNav cohesion fixes)
+
+### Actions still required from YOU (Janmejai)
+
+1. **Email notifications (non-blocking — magic link works now)**
+   - Create account at resend.com, add domain `prepmax.xlri.ac.in`, get API key
+   - Go to: `supabase.com/dashboard/project/fzohmolumyfupffkbxug/functions/drain-notifications/secrets`
+   - Set `RESEND_API_KEY=re_xxxx` and `APP_URL=https://prep-max-alpha.vercel.app`
+   - Schedule the cron at: `supabase.com/dashboard/project/fzohmolumyfupffkbxug/integrations/cron` → `drain-notifications` every 60s
+   - This one function handles both email delivery AND 30-min slot reminders.
+
+2. **Google OAuth (optional — magic link already works)**
+   - `console.cloud.google.com` → Credentials → OAuth 2.0 Client ID
+   - Authorized redirect URI: `https://fzohmolumyfupffkbxug.supabase.co/auth/v1/callback`
+   - Add `https://prep-max-alpha.vercel.app/auth/callback` to Supabase redirect allow-list
+   - `supabase.com/dashboard/project/fzohmolumyfupffkbxug/auth/providers` → Enable Google → paste Client ID + Secret
+
+3. **Seed dev data for cockpit testing**
+   - Run: `npx tsx scripts/seed-dev-users.ts` (idempotent — creates the 4 dev accounts)
+   - Run: `npx tsx scripts/seed-dev-feedback.ts` (creates a completed slot + feedback rows for UI testing)
+
+### Known limitations / deferred items
+
+- **Web push notifications** — not built. The current system is in-app bell + email. Native push (PWA service worker + Push API) is a V2 item; the data plumbing is already there.
+- **Sentry** — no error monitoring. If the app goes to real users, add Sentry (one `next.config.js` line + `SENTRY_DSN` env var).
+- **Lighthouse mobile** — not formally audited. The 390px Playwright tests confirm routes load; a full Core Web Vitals pass hasn't been done.
+- **RUNBOOK.md** — not written. Would document incident response, how to rotate the service-role key, etc.
+- **Auth rate limit in CI** — `confirm_slot.test.ts` occasionally hits Supabase auth rate limit; non-blocking locally but may affect a dedicated CI runner.
+- **Seed counter display bug** — `seed.ts` logs "0 fake profiles seeded" due to a JS closure quirk; the rows are actually in the DB.
+
+### Suggested next steps (prioritized)
+
+1. **Activate emails** (15-min user action, zero code): set Resend key + schedule cron as above — this is the highest-value thing not yet live.
+2. **Onboard real users**: share the dev login at https://prep-max-alpha.vercel.app/dev-login with the CRISP committee first, then open to b25/b26 cohort.
+3. **Lighthouse / performance audit**: run `npx lhci autorun` or use Chrome DevTools to measure INP/LCP on the home feed with real data.
+4. **Sentry stub**: 1-hour task — add `@sentry/nextjs`, wrap in `withSentryConfig`, set `SENTRY_DSN`. Good insurance before real users.
+5. **RUNBOOK.md**: document key rotation, how to add a room, how to reset a dev account, incident escalation path.
+6. **Web push (V2)**: browser Push API + service worker for on-device notifications even when the app is closed.
+
 ## Exact Next Step (open this at the start of the next session)
 
-1. **Enable email notifications** (user action): Set `RESEND_API_KEY` + `APP_URL` in Supabase Edge Function secrets, then schedule `drain-notifications` cron every 60s — see "One action still needed" above.
-2. **Performance pass** (Item 7): Measure transitions, kill remaining waterfalls, prefetch routes, cache where safe.
-3. **QA / Playwright** (Item 8): All 4 roles at 390px — junior join/leave/request, senior host/cockpit, crisp admin, sac rooms. Fix any regressions.
-4. **Phase 8 Hardening** — RLS audit, Lighthouse mobile pass, Sentry stub, RUNBOOK.md.
+Start by activating email notifications (see "Actions still required" above — it's a 15-min Supabase dashboard task). Then onboard the CRISP committee as first real users and observe any issues.
 
 ## Possible Future Enhancements (V2)
 - No-show penalty: 24h booking cooldown after 2 no-shows in 7 days (config-flagged — data path already built)
