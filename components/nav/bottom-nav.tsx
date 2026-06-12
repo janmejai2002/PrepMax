@@ -9,6 +9,10 @@ import {
   ShieldCheck,
   ClipboardList,
   Building2,
+  Users,
+  User,
+  Network,
+  HelpCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -16,6 +20,8 @@ type Tab = {
   href: string
   label: string
   icon: React.FC<{ className?: string; strokeWidth?: number }>
+  /** extra paths that should also highlight this tab */
+  alsoActive?: string[]
 }
 
 export function BottomNav({
@@ -28,44 +34,48 @@ export function BottomNav({
   isSac?: boolean
   isCrisp?: boolean
   isCommittee?: boolean
-  // isAdmin kept for backwards-compat call sites; ignored (derived from isCrisp/isSac)
+  // isAdmin kept for backwards-compat call sites; ignored
   isAdmin?: boolean
 }) {
   const pathname = usePathname()
 
-  // Capabilities are ADDITIVE. The nav shows the union of what each flag grants.
-  // A senior with both SAC and CRISP sees Feed + Requests + Doubts + Admin (CRISP wins tab-4).
   const hasSeniorCapability = isSenior || isCrisp || isSac || isCommittee
 
   let tabs: Tab[]
 
   if (!hasSeniorCapability) {
-    // Junior
+    // ── Junior ──────────────────────────────────────────────────────────────
     tabs = [
-      { href: '/',             label: 'Feed',     icon: CalendarRange },
-      { href: '/my-requests',  label: 'Requests', icon: ClipboardList },
-      { href: '/knowledge',    label: 'Knowledge', icon: BookOpen },
-      { href: '/doubts',       label: 'Doubts',   icon: MessageCircleQuestion },
+      {
+        href: '/ask',
+        label: 'Ask a Senior',
+        icon: HelpCircle,
+        alsoActive: ['/my-requests'],
+      },
+      { href: '/knowledge', label: 'Domain', icon: BookOpen },
+      { href: '/crisp-net', label: 'CRISPNet', icon: Network },
+      { href: '/profile',   label: 'My Profile', icon: User },
+    ]
+  } else if (isCommittee && !isCrisp && !isSac) {
+    // ── Committee-only ────────────────────────────────────────────────────────
+    // Committee members focus on knowledge management; 2-tab nav
+    tabs = [
+      { href: '/knowledge', label: 'Knowledge', icon: BookOpen },
+      { href: '/profile',   label: 'My Profile', icon: User },
     ]
   } else {
-    // Senior base: Feed + Requests + Doubts (always present)
-    // 4th tab is additive based on highest-priority capability:
-    //   CRISP → Admin (/admin/stats, links to rooms/monitor/roles)
-    //   SAC   → Rooms (/admin/rooms)
-    //   base  → Knowledge (/knowledge)
-    //   NOTE: Knowledge ambiguity flagged in Part C review — pending user confirmation
-    //         to decide whether base seniors can VIEW knowledge without is_committee.
-    //         For now Knowledge is kept as the fallback 4th tab.
+    // ── Senior (base / CRISP / SAC) ──────────────────────────────────────────
+    // Capabilities are ADDITIVE. 4th tab set by highest-priority flag.
     const tab4: Tab = isCrisp
-      ? { href: '/admin/stats',  label: 'Admin',    icon: ShieldCheck }
+      ? { href: '/mentees',     label: 'Mentees', icon: Users }
       : isSac
-      ? { href: '/admin/rooms',  label: 'Rooms',    icon: Building2 }
-      : { href: '/knowledge',    label: 'Knowledge', icon: BookOpen }
+      ? { href: '/admin/rooms', label: 'Rooms',   icon: Building2 }
+      : { href: '/profile',     label: 'Profile', icon: User }
 
     tabs = [
-      { href: '/',          label: 'Feed',     icon: CalendarRange },
-      { href: '/requests',  label: 'Requests', icon: ClipboardList },
-      { href: '/doubts',    label: 'Doubts',   icon: MessageCircleQuestion },
+      { href: '/',         label: 'Feed',     icon: CalendarRange },
+      { href: '/requests', label: 'Requests', icon: ClipboardList },
+      { href: '/doubts',   label: 'Q&A',      icon: MessageCircleQuestion },
       tab4,
     ]
   }
@@ -76,8 +86,12 @@ export function BottomNav({
       style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
     >
       <div className="flex w-full max-w-sm items-stretch rounded-2xl border border-border/50 bg-card/95 shadow-xl shadow-black/10 backdrop-blur-xl">
-        {tabs.map(({ href, label, icon: Icon }, i) => {
-          const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
+        {tabs.map(({ href, label, icon: Icon, alsoActive }, i) => {
+          const active =
+            href === '/'
+              ? pathname === '/'
+              : pathname.startsWith(href) ||
+                (alsoActive?.some(p => pathname.startsWith(p)) ?? false)
           const isFirst = i === 0
           const isLast = i === tabs.length - 1
           return (
@@ -91,7 +105,6 @@ export function BottomNav({
                 active ? 'text-gd' : 'text-muted-foreground/50 hover:text-muted-foreground',
               )}
             >
-              {/* active background indicator */}
               {active && (
                 <span className="absolute inset-x-1.5 inset-y-1.5 rounded-xl bg-gd-soft transition-all" />
               )}

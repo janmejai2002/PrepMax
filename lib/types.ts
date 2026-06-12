@@ -83,17 +83,16 @@ export interface SlotDetail extends FeedSlot {
   is_admin: boolean
 }
 
-/** A received-feedback row (my_received_feedback view). */
+/** A received-feedback row (my_received_feedback view — judge identity stripped). */
 export interface ReceivedFeedback {
   id: string
   slot_id: string
-  from_user_id: string
   to_user_id: string
   scores: Record<string, number>
   tags: string[]
   notes: string | null
   created_at: string
-  slot_type: 'GD' | 'PI'
+  slot_type: string
   slot_topic: string
   slot_start_at: string
   host_name: string

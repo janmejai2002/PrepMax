@@ -5,6 +5,7 @@ import { AppHeader } from '@/components/nav/app-header'
 import { profileToNavRole } from '@/lib/nav-role'
 import { initials } from '@/lib/format'
 import { SignOutButton } from './sign-out-button'
+import { ProfileEditClient } from './profile-edit-client'
 import { cn } from '@/lib/utils'
 import type { ReceivedFeedback } from '@/lib/types'
 import { SCORE_DIMS, SCORE_DIM_LABELS } from '@/lib/types'
@@ -120,6 +121,13 @@ export default async function ProfilePage() {
             </div>
           ))}
         </div>
+
+        <ProfileEditClient
+          ug_degree={profile.ug_degree ?? null}
+          bio={profile.bio ?? null}
+          domain_1={profile.domain_1 ?? null}
+          domain_2={profile.domain_2 ?? null}
+        />
 
         {/* Feedback section */}
         {feedback.length > 0 ? (

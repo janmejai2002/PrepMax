@@ -27,20 +27,7 @@ export default async function MyRequestsPage() {
   const isSenior = !!(profile.can_host_gd || profile.can_host_pi)
   const hasSeniorCapability = isSenior || !!profile.is_crisp || !!profile.is_sac
 
-  // Senior-capability users browse /requests (the anonymous feed); juniors stay here
+  // Seniors go to /requests; juniors now use /ask (which embeds this content)
   if (hasSeniorCapability) redirect('/requests')
-  const requests: MySlotRequest[] = Array.isArray(raw) ? raw : []
-
-  return (
-    <div className="min-h-screen bg-background pb-nav">
-      <AppHeader name={profile.name} role={profileToNavRole(profile)} />
-      <MyRequestsClient
-        initialRequests={requests}
-        userName={profile.name}
-      />
-      <BottomNav
-        isSenior={false}
-      />
-    </div>
-  )
+  redirect('/ask')
 }

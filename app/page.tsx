@@ -44,6 +44,11 @@ export default async function HomePage() {
   const isSenior = !!(profile.can_host_gd || profile.can_host_pi)
   const isCrisp = !!profile.is_crisp
 
+  // Juniors (no senior capability) land on /ask — the slot feed is for seniors only
+  if (!isSenior && !isCrisp && !profile.is_sac && !profile.is_committee) {
+    redirect('/ask')
+  }
+
   const capabilities: HostCapabilities = {
     canHostGd: !!profile.can_host_gd,
     canHostPi: !!profile.can_host_pi,
