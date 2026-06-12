@@ -12,7 +12,12 @@ import {
 import { LogOut, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { initials } from '@/lib/format'
-import { NotificationBell } from './notification-bell'
+import dynamic from 'next/dynamic'
+
+const NotificationBell = dynamic(
+  () => import('./notification-bell').then((m) => ({ default: m.NotificationBell })),
+  { ssr: false }
+)
 
 export type NavRole = 'junior' | 'senior' | 'crisp' | 'sac'
 

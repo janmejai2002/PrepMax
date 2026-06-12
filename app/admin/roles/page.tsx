@@ -13,15 +13,20 @@ export default async function RolesPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const service = createServiceClient()
-  const [{ data: profile }, { data: rawProfiles }] = await Promise.all([
+  let service: ReturnType<typeof createServiceClient> | null = null
+  try { service = createServiceClient() } catch { /* env key missing */ }
+
+  const [{ data: profile }, serviceRes] = await Promise.all([
     supabase.from('profiles').select('name, is_crisp, is_sac').eq('id', user.id).single(),
-    service.from('profiles')
-      .select('id, name, email, year, batch, can_host_gd, can_host_pi, is_crisp, is_sac')
-      .order('year', { ascending: false, nullsFirst: false })
-      .order('name')
-      .limit(500),
+    service
+      ? service.from('profiles')
+          .select('id, name, email, year, batch, can_host_gd, can_host_pi, is_crisp, is_sac')
+          .order('year', { ascending: false, nullsFirst: false })
+          .order('name')
+          .limit(500)
+      : Promise.resolve({ data: [] }),
   ])
+  const rawProfiles = 'data' in serviceRes ? serviceRes.data : []
 
   if (!profile?.is_crisp && !profile?.is_sac) redirect('/')
 

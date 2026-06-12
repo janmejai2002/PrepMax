@@ -11,17 +11,21 @@ import type { KnowledgePost } from '@/lib/types'
 // Invalidated when a new post is created (via revalidateTag in the post action).
 const getCachedPosts = unstable_cache(
   async () => {
-    const sb = createServiceClient()
-    const { data } = await sb
-      .from('knowledge_posts')
-      .select(`
-        id, author_id, title, body, tags, function_tag, is_pinned, created_at, updated_at,
-        profiles!knowledge_posts_author_id_fkey ( name )
-      `)
-      .order('is_pinned', { ascending: false })
-      .order('created_at', { ascending: false })
-      .limit(50)
-    return data ?? []
+    try {
+      const sb = createServiceClient()
+      const { data } = await sb
+        .from('knowledge_posts')
+        .select(`
+          id, author_id, title, body, tags, function_tag, is_pinned, created_at, updated_at,
+          profiles!knowledge_posts_author_id_fkey ( name )
+        `)
+        .order('is_pinned', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(50)
+      return data ?? []
+    } catch {
+      return []
+    }
   },
   ['knowledge-posts'],
   { revalidate: 60, tags: ['knowledge-posts'] }
