@@ -4,8 +4,12 @@
  * Run against live Vercel:
  *   $env:PLAYWRIGHT_BASE_URL="https://prep-max-alpha.vercel.app"; npx playwright test e2e/roles.spec.ts
  *
- * Additive permission model: capabilities STACK.
- * SAC/CRISP are layered on senior accounts — they add tabs, never replace them.
+ * Phase 8 nav matrix:
+ *   Junior:           Ask a Senior | Domain | CRISPNet | My Profile
+ *   Senior base:      Feed | Requests | Q&A | Profile
+ *   CRISP senior:     Feed | Requests | Q&A | Mentees
+ *   SAC senior:       Feed | Requests | Q&A | Rooms
+ *   Committee-only:   Knowledge | My Profile  (2-tab)
  */
 import { test, expect, type Page } from '@playwright/test'
 
@@ -15,7 +19,7 @@ async function devLogin(page: Page, label: string) {
   await page.goto('/dev-login')
   await expect(page.getByText('Test login')).toBeVisible()
   await page.getByRole('button', { name: label }).click()
-  await page.waitForURL(/\/(admin\/rooms|admin\/stats|profile|knowledge|doubts|\?.*)?$/, { timeout: 25_000 })
+  await page.waitForURL(/\/(ask|admin\/rooms|admin\/stats|profile|knowledge|doubts|\?.*)?$/, { timeout: 25_000 })
   await page.waitForLoadState('networkidle')
 }
 
@@ -50,19 +54,21 @@ async function assertPageLoads(page: Page, path: string, expectedH1: RegExp | st
 test.describe('Junior (b26001)', () => {
   test.beforeEach(async ({ page }) => {
     await devLogin(page, 'Junior')
-    await expect(page).toHaveURL('/')
+    // Juniors are redirected from / → /ask
+    await expect(page).toHaveURL('/ask')
   })
 
-  test('home feed loads + correct nav tabs', async ({ page }) => {
-    await expectNavTabs(page, ['Feed', 'Requests', 'Knowledge', 'Doubts'])
+  test('lands on /ask + correct Phase 8 nav tabs', async ({ page }) => {
+    await expectNavTabs(page, ['Ask a Senior', 'Domain', 'CRISPNet', 'My Profile'])
+    await expectNoNavTab(page, 'Feed')
     await expectNoNavTab(page, 'Admin')
     await expectNoNavTab(page, 'Rooms')
     await expect(page.getByRole('button', { name: /host a slot/i })).not.toBeVisible()
   })
 
-  test('Requests tab navigates to /my-requests', async ({ page }) => {
-    await page.locator('nav').getByText('Requests', { exact: true }).click()
-    await page.waitForURL('/my-requests')
+  test('Ask a Senior tab stays on /ask', async ({ page }) => {
+    await page.locator('nav').getByText('Ask a Senior', { exact: true }).click()
+    await page.waitForURL('/ask')
     await page.waitForLoadState('networkidle')
     await expect(
       page.getByText(/practice request|my requests|post a request/i).first()
@@ -73,8 +79,10 @@ test.describe('Junior (b26001)', () => {
     await assertPageLoads(page, '/knowledge', 'Knowledge')
   })
 
-  test('/doubts loads', async ({ page }) => {
-    await assertPageLoads(page, '/doubts', 'Doubts')
+  test('/crisp-net loads', async ({ page }) => {
+    await page.goto('/crisp-net')
+    await expect(page).toHaveURL('/crisp-net')
+    await page.waitForLoadState('networkidle')
   })
 
   test('/profile loads with sign-out button', async ({ page }) => {
@@ -89,6 +97,12 @@ test.describe('Junior (b26001)', () => {
     await page.waitForLoadState('networkidle')
     await expect(page).not.toHaveURL(/\/admin\/rooms/)
   })
+
+  test('/my-requests redirects to /ask', async ({ page }) => {
+    await page.goto('/my-requests')
+    await page.waitForLoadState('networkidle')
+    await expect(page).toHaveURL('/ask')
+  })
 })
 
 // ── SENIOR ───────────────────────────────────────────────────────────────────
@@ -99,11 +113,12 @@ test.describe('Senior (b25001)', () => {
     await expect(page).toHaveURL('/')
   })
 
-  test('home feed loads + Host FAB + correct nav tabs', async ({ page }) => {
-    // Senior base nav: Feed | Requests | Doubts | Knowledge
-    await expectNavTabs(page, ['Feed', 'Requests', 'Doubts', 'Knowledge'])
+  test('home feed loads + Host FAB + correct Phase 8 nav tabs', async ({ page }) => {
+    // Senior base nav: Feed | Requests | Q&A | Profile
+    await expectNavTabs(page, ['Feed', 'Requests', 'Q&A', 'Profile'])
     await expectNoNavTab(page, 'Admin')
     await expectNoNavTab(page, 'Rooms')
+    await expectNoNavTab(page, 'Mentees')
     await expect(page.getByRole('button', { name: /host a slot/i })).toBeVisible()
   })
 
@@ -149,18 +164,19 @@ test.describe('CRISP Senior (b25002)', () => {
     await expect(page).toHaveURL('/')
   })
 
-  test('home feed loads + additive nav (Feed/Requests/Doubts/Admin)', async ({ page }) => {
-    // CRISP senior sees base senior tabs + Admin tab (additive)
-    await expectNavTabs(page, ['Feed', 'Requests', 'Doubts', 'Admin'])
-    await expectNoNavTab(page, 'Rooms')  // rooms accessible via Admin sub-nav
+  test('home feed loads + additive nav (Feed/Requests/Q&A/Mentees)', async ({ page }) => {
+    // CRISP senior: base senior tabs + Mentees tab
+    await expectNavTabs(page, ['Feed', 'Requests', 'Q&A', 'Mentees'])
+    await expectNoNavTab(page, 'Admin')
+    await expectNoNavTab(page, 'Rooms')
     await expect(page.getByRole('button', { name: /host a slot/i })).toBeVisible()
   })
 
-  test('Admin tab navigates to /admin/stats', async ({ page }) => {
-    await page.locator('nav').getByText('Admin', { exact: true }).click()
-    await page.waitForURL('/admin/stats')
+  test('Mentees tab navigates to /mentees', async ({ page }) => {
+    await page.locator('nav').getByText('Mentees', { exact: true }).click()
+    await page.waitForURL('/mentees')
     await page.waitForLoadState('networkidle')
-    await expect(page.getByText(/crisp dashboard|daily stats/i).first()).toBeVisible()
+    await expect(page.getByText(/mentee/i).first()).toBeVisible()
   })
 
   test('/requests loads (CRISP seniors can browse request feed)', async ({ page }) => {
@@ -174,15 +190,16 @@ test.describe('CRISP Senior (b25002)', () => {
     await assertPageLoads(page, '/admin/rooms', /rooms/i)
   })
 
-  test('/crisp-monitor loads mentee monitor', async ({ page }) => {
-    await assertPageLoads(page, '/crisp-monitor', /mentee monitor/i)
+  test('/crisp-monitor redirects to /mentees', async ({ page }) => {
+    await page.goto('/crisp-monitor')
+    await page.waitForLoadState('networkidle')
+    await expect(page).toHaveURL('/mentees')
   })
 
-  test('/mentor loads junior overview', async ({ page }) => {
+  test('/mentor redirects to /mentees', async ({ page }) => {
     await page.goto('/mentor')
-    await expect(page).toHaveURL('/mentor')
     await page.waitForLoadState('networkidle')
-    await expect(page.getByText(/junior|mentee/i).first()).toBeVisible()
+    await expect(page).toHaveURL('/mentees')
   })
 
   test('/admin/roles loads role management', async ({ page }) => {
@@ -206,7 +223,6 @@ test.describe('CRISP Senior (b25002)', () => {
 test.describe('SAC Senior (b25003)', () => {
   test.beforeEach(async ({ page }) => {
     await devLogin(page, 'SAC Senior')
-    // SAC is NO LONGER redirected from / — they land on the feed like any senior
     await expect(page).toHaveURL('/')
   })
 
@@ -216,10 +232,11 @@ test.describe('SAC Senior (b25003)', () => {
     await expect(page).toHaveURL('/')
   })
 
-  test('home feed loads + additive nav (Feed/Requests/Doubts/Rooms)', async ({ page }) => {
-    // SAC senior sees base senior tabs + Rooms tab (additive, NOT rooms-only)
-    await expectNavTabs(page, ['Feed', 'Requests', 'Doubts', 'Rooms'])
+  test('home feed loads + additive nav (Feed/Requests/Q&A/Rooms)', async ({ page }) => {
+    // SAC senior: base senior tabs + Rooms tab (additive)
+    await expectNavTabs(page, ['Feed', 'Requests', 'Q&A', 'Rooms'])
     await expectNoNavTab(page, 'Admin')
+    await expectNoNavTab(page, 'Mentees')
     await expect(page.getByRole('button', { name: /host a slot/i })).toBeVisible()
   })
 
@@ -259,10 +276,10 @@ test.describe('SAC Senior (b25003)', () => {
     await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible()
   })
 
-  test('/crisp-monitor is CRISP-only → redirected away', async ({ page }) => {
+  test('/crisp-monitor is CRISP-only → redirects to /mentees', async ({ page }) => {
     await page.goto('/crisp-monitor')
     await page.waitForLoadState('networkidle')
-    await expect(page).not.toHaveURL(/\/crisp-monitor/)
+    await expect(page).toHaveURL('/mentees')
   })
 })
 
@@ -274,9 +291,10 @@ test.describe('Committee Senior (b25004)', () => {
     await expect(page).toHaveURL('/')
   })
 
-  test('home feed loads + senior nav with Knowledge tab', async ({ page }) => {
-    // Committee senior: base senior tabs (Feed/Requests/Doubts) + Knowledge (for posting)
-    await expectNavTabs(page, ['Feed', 'Requests', 'Doubts', 'Knowledge'])
+  test('2-tab committee nav (Knowledge + My Profile)', async ({ page }) => {
+    // Committee-only: 2-tab nav focused on knowledge management
+    await expectNavTabs(page, ['Knowledge', 'My Profile'])
+    await expectNoNavTab(page, 'Feed')
     await expectNoNavTab(page, 'Admin')
     await expectNoNavTab(page, 'Rooms')
     await expect(page.getByRole('button', { name: /host a slot/i })).toBeVisible()
@@ -287,7 +305,7 @@ test.describe('Committee Senior (b25004)', () => {
     await expect(page).toHaveURL('/knowledge')
     await page.waitForLoadState('networkidle')
     await expect(page.getByRole('heading', { name: /knowledge/i })).toBeVisible()
-    // Committee senior should see the Post button / form
+    // Committee senior should see the Post button
     await expect(page.getByRole('button', { name: /post|new post|add post/i }).first()).toBeVisible()
   })
 
