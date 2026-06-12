@@ -2,7 +2,8 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { BottomNav } from '@/components/nav/bottom-nav'
-import { AppHeader, profileToNavRole } from '@/components/nav/app-header'
+import { AppHeader } from '@/components/nav/app-header'
+import { profileToNavRole } from '@/lib/nav-role'
 import { RoomNowClient } from './room-now-client'
 import {
   BarChart3, CheckCircle2, XCircle, Users, Radio,

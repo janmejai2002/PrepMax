@@ -2,7 +2,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { SlotsFeed } from '@/components/slots/slots-feed'
 import { BottomNav } from '@/components/nav/bottom-nav'
-import { AppHeader, profileToNavRole } from '@/components/nav/app-header'
+import { AppHeader } from '@/components/nav/app-header'
+import { profileToNavRole } from '@/lib/nav-role'
 import type { FeedSlot, HostCapabilities, RoomOption, JudgeOption } from '@/lib/types'
 
 export default async function HomePage() {

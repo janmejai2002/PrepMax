@@ -13,25 +13,14 @@ import { LogOut, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { initials } from '@/lib/format'
 import dynamic from 'next/dynamic'
+import type { NavRole } from '@/lib/nav-role'
+
+export type { NavRole }
 
 const NotificationBell = dynamic(
   () => import('./notification-bell').then((m) => ({ default: m.NotificationBell })),
   { ssr: false }
 )
-
-export type NavRole = 'junior' | 'senior' | 'crisp' | 'sac'
-
-export function profileToNavRole(p: {
-  is_sac?: boolean | null
-  is_crisp?: boolean | null
-  can_host_gd?: boolean | null
-  can_host_pi?: boolean | null
-}): NavRole {
-  if (p.is_sac) return 'sac'
-  if (p.is_crisp) return 'crisp'
-  if (p.can_host_gd || p.can_host_pi) return 'senior'
-  return 'junior'
-}
 
 const ROLE_META: Record<NavRole, { label: string; cls: string }> = {
   sac:    { label: 'SAC',    cls: 'bg-purple-500/15 text-purple-400 border border-purple-500/25' },

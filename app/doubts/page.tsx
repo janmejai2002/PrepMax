@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { BottomNav } from '@/components/nav/bottom-nav'
-import { AppHeader, profileToNavRole } from '@/components/nav/app-header'
+import { AppHeader } from '@/components/nav/app-header'
+import { profileToNavRole } from '@/lib/nav-role'
 import { DoubtsFeedClient } from './doubts-feed-client'
 import type { Doubt } from '@/lib/types'
 

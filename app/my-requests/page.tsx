@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { BottomNav } from '@/components/nav/bottom-nav'
-import { AppHeader, profileToNavRole } from '@/components/nav/app-header'
+import { AppHeader } from '@/components/nav/app-header'
+import { profileToNavRole } from '@/lib/nav-role'
 import { MyRequestsClient } from './my-requests-client'
 import type { MySlotRequest } from '@/lib/types'
 
