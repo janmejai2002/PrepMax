@@ -19,46 +19,54 @@ type Tab = {
 }
 
 export function BottomNav({
-  isAdmin = false,
   isSenior = false,
   isSac = false,
   isCrisp = false,
+  isCommittee = false,
 }: {
-  isAdmin?: boolean
   isSenior?: boolean
   isSac?: boolean
   isCrisp?: boolean
+  isCommittee?: boolean
+  // isAdmin kept for backwards-compat call sites; ignored (derived from isCrisp/isSac)
+  isAdmin?: boolean
 }) {
   const pathname = usePathname()
 
+  // Capabilities are ADDITIVE. The nav shows the union of what each flag grants.
+  // A senior with both SAC and CRISP sees Feed + Requests + Doubts + Admin (CRISP wins tab-4).
+  const hasSeniorCapability = isSenior || isCrisp || isSac || isCommittee
+
   let tabs: Tab[]
 
-  if (isSac) {
-    tabs = [
-      { href: '/admin/rooms', label: 'Rooms', icon: Building2 },
-    ]
-  } else if (isCrisp) {
-    // CRISP: max 4 — Feed, Requests, Knowledge, Admin
-    tabs = [
-      { href: '/',             label: 'Feed',      icon: CalendarRange },
-      { href: '/requests',     label: 'Requests',  icon: ClipboardList },
-      { href: '/knowledge',    label: 'Knowledge', icon: BookOpen },
-      { href: '/admin/stats',  label: 'Admin',     icon: ShieldCheck },
-    ]
-  } else if (isSenior) {
-    tabs = [
-      { href: '/',             label: 'Feed',      icon: CalendarRange },
-      { href: '/requests',     label: 'Requests',  icon: ClipboardList },
-      { href: '/knowledge',    label: 'Knowledge', icon: BookOpen },
-      { href: '/doubts',       label: 'Doubts',    icon: MessageCircleQuestion },
-    ]
-  } else {
+  if (!hasSeniorCapability) {
     // Junior
     tabs = [
-      { href: '/',             label: 'Feed',      icon: CalendarRange },
-      { href: '/my-requests',  label: 'Requests',  icon: ClipboardList },
+      { href: '/',             label: 'Feed',     icon: CalendarRange },
+      { href: '/my-requests',  label: 'Requests', icon: ClipboardList },
       { href: '/knowledge',    label: 'Knowledge', icon: BookOpen },
-      { href: '/doubts',       label: 'Doubts',    icon: MessageCircleQuestion },
+      { href: '/doubts',       label: 'Doubts',   icon: MessageCircleQuestion },
+    ]
+  } else {
+    // Senior base: Feed + Requests + Doubts (always present)
+    // 4th tab is additive based on highest-priority capability:
+    //   CRISP → Admin (/admin/stats, links to rooms/monitor/roles)
+    //   SAC   → Rooms (/admin/rooms)
+    //   base  → Knowledge (/knowledge)
+    //   NOTE: Knowledge ambiguity flagged in Part C review — pending user confirmation
+    //         to decide whether base seniors can VIEW knowledge without is_committee.
+    //         For now Knowledge is kept as the fallback 4th tab.
+    const tab4: Tab = isCrisp
+      ? { href: '/admin/stats',  label: 'Admin',    icon: ShieldCheck }
+      : isSac
+      ? { href: '/admin/rooms',  label: 'Rooms',    icon: Building2 }
+      : { href: '/knowledge',    label: 'Knowledge', icon: BookOpen }
+
+    tabs = [
+      { href: '/',          label: 'Feed',     icon: CalendarRange },
+      { href: '/requests',  label: 'Requests', icon: ClipboardList },
+      { href: '/doubts',    label: 'Doubts',   icon: MessageCircleQuestion },
+      tab4,
     ]
   }
 
@@ -67,13 +75,7 @@ export function BottomNav({
       className="fixed inset-x-0 bottom-0 z-50 flex justify-center px-4"
       style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
     >
-      <div
-        className={cn(
-          'flex items-stretch rounded-2xl border border-border/50 bg-card/95 shadow-xl shadow-black/10 backdrop-blur-xl',
-          // SAC single-tab gets a narrower pill
-          isSac ? 'w-auto px-2' : 'w-full max-w-sm',
-        )}
-      >
+      <div className="flex w-full max-w-sm items-stretch rounded-2xl border border-border/50 bg-card/95 shadow-xl shadow-black/10 backdrop-blur-xl">
         {tabs.map(({ href, label, icon: Icon }, i) => {
           const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
           const isFirst = i === 0

@@ -16,7 +16,7 @@ export default async function RequestsPage() {
   const [{ data: profile }, { data: raw }] = await Promise.all([
     supabase
       .from('profiles')
-      .select('name, year, can_host_gd, can_host_pi, is_crisp, is_sac')
+      .select('name, year, can_host_gd, can_host_pi, is_crisp, is_sac, is_committee')
       .eq('id', user.id)
       .single(),
     supabase.rpc('get_open_requests'),
@@ -24,15 +24,12 @@ export default async function RequestsPage() {
 
   if (!profile) redirect('/onboarding')
 
-  // CRISP/SAC accounts see only the knowledge/post view
-  if (profile.is_crisp || profile.is_sac) redirect('/knowledge')
+  const isSenior = !!(profile.can_host_gd || profile.can_host_pi)
 
-  const isSenior =
-    profile.can_host_gd ||
-    profile.can_host_pi
-
-  // Juniors can't browse the anonymous senior feed — redirect to their own page
-  if (!isSenior) redirect('/my-requests')
+  // Capabilities are additive — CRISP/SAC seniors can browse the request feed too.
+  // Only pure juniors (no senior host flags) use /my-requests.
+  const hasSeniorCapability = isSenior || !!profile.is_crisp || !!profile.is_sac
+  if (!hasSeniorCapability) redirect('/my-requests')
   const requests: OpenRequest[] = Array.isArray(raw) ? raw : []
 
   return (
@@ -41,6 +38,9 @@ export default async function RequestsPage() {
       <RequestsFeedClient initialRequests={requests} />
       <BottomNav
         isSenior={isSenior}
+        isCrisp={!!profile.is_crisp}
+        isSac={!!profile.is_sac}
+        isCommittee={!!profile.is_committee}
       />
     </div>
   )

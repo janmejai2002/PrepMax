@@ -24,15 +24,11 @@ export default async function MyRequestsPage() {
 
   if (!profile) redirect('/onboarding')
 
-  // CRISP/SAC accounts see only the knowledge/post view
-  if (profile.is_crisp || profile.is_sac) redirect('/knowledge')
+  const isSenior = !!(profile.can_host_gd || profile.can_host_pi)
+  const hasSeniorCapability = isSenior || !!profile.is_crisp || !!profile.is_sac
 
-  const isSenior =
-    profile.can_host_gd ||
-    profile.can_host_pi
-
-  // Seniors use the /requests page to browse the anonymous feed
-  if (isSenior) redirect('/requests')
+  // Senior-capability users browse /requests (the anonymous feed); juniors stay here
+  if (hasSeniorCapability) redirect('/requests')
   const requests: MySlotRequest[] = Array.isArray(raw) ? raw : []
 
   return (

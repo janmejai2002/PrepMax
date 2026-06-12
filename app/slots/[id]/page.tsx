@@ -59,7 +59,6 @@ export default async function SlotDetailPage({ params }: Props) {
         />
       </div>
       <BottomNav
-        isAdmin={isCrisp || !!profile.is_sac}
         isSenior={isSenior}
         isSac={!!profile.is_sac}
         isCrisp={isCrisp}

@@ -36,8 +36,8 @@ export default async function RoomsAdminPage() {
           <p className="text-sm text-muted-foreground">Toggle rooms live/offline and add new venues.</p>
         </div>
 
-        {/* Admin sub-nav: only for CRISP members (not for SAC) */}
-        {isCrisp && !isSac && (
+        {/* Admin sub-nav: visible to CRISP members (CRISP+SAC combo also shows it) */}
+        {isCrisp && (
           <div className="flex gap-2 flex-wrap">
             <span className="flex-1 rounded-xl border bg-card px-3 py-2 text-center text-xs font-medium">
               <Building2 className="h-3.5 w-3.5 inline mr-1" />
@@ -63,11 +63,7 @@ export default async function RoomsAdminPage() {
 
         <RoomsClient initialRooms={rooms ?? []} isSac={isSac} />
       </div>
-      <BottomNav
-        isAdmin={isAdmin}
-        isSac={isSac}
-        isCrisp={isCrisp}
-      />
+      <BottomNav isSac={isSac} isCrisp={isCrisp} isSenior={isSac || isCrisp} />
     </div>
   )
 }

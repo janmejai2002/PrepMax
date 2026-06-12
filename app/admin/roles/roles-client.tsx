@@ -7,10 +7,11 @@ import { cn } from '@/lib/utils'
 import { updateUserFlags, type ProfileRow, type RoleFlags } from './actions'
 
 const FLAG_DEFS: { key: keyof RoleFlags; label: string; color: string }[] = [
-  { key: 'can_host_gd', label: 'GD Host', color: 'bg-gd-soft text-gd' },
-  { key: 'can_host_pi', label: 'PI Host',  color: 'bg-pi-soft text-pi' },
-  { key: 'is_crisp',    label: 'CRISP',    color: 'bg-secondary text-secondary-foreground' },
-  { key: 'is_sac',      label: 'SAC',      color: 'bg-destructive/15 text-destructive' },
+  { key: 'can_host_gd',   label: 'GD Host',    color: 'bg-gd-soft text-gd' },
+  { key: 'can_host_pi',   label: 'PI Host',     color: 'bg-pi-soft text-pi' },
+  { key: 'is_crisp',      label: 'CRISP',       color: 'bg-amber-500/20 text-amber-500' },
+  { key: 'is_sac',        label: 'SAC',         color: 'bg-purple-500/20 text-purple-400' },
+  { key: 'is_committee',  label: 'Committee',   color: 'bg-sky-500/20 text-sky-400' },
 ]
 
 function FlagChip({
@@ -41,10 +42,11 @@ function FlagChip({
 
 function UserRow({ profile }: { profile: ProfileRow }) {
   const [flags, setFlags] = useState<RoleFlags>({
-    can_host_gd: profile.can_host_gd,
-    can_host_pi: profile.can_host_pi,
-    is_crisp:    profile.is_crisp,
-    is_sac:      profile.is_sac,
+    can_host_gd:   profile.can_host_gd,
+    can_host_pi:   profile.can_host_pi,
+    is_crisp:      profile.is_crisp,
+    is_sac:        profile.is_sac,
+    is_committee:  profile.is_committee,
   })
   const [expanded, setExpanded] = useState(false)
   const [error, setError] = useState('')

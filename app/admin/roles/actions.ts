@@ -8,6 +8,7 @@ export interface RoleFlags {
   can_host_pi: boolean
   is_crisp: boolean
   is_sac: boolean
+  is_committee: boolean
 }
 
 export async function updateUserFlags(
@@ -48,6 +49,7 @@ export interface ProfileRow {
   can_host_pi: boolean
   is_crisp: boolean
   is_sac: boolean
+  is_committee: boolean
 }
 
 export async function listAllProfiles(): Promise<ProfileRow[]> {
@@ -66,7 +68,7 @@ export async function listAllProfiles(): Promise<ProfileRow[]> {
   const service = createServiceClient()
   const { data } = await service
     .from('profiles')
-    .select('id, name, email, year, batch, can_host_gd, can_host_pi, is_crisp, is_sac')
+    .select('id, name, email, year, batch, can_host_gd, can_host_pi, is_crisp, is_sac, is_committee')
     .order('year', { ascending: false, nullsFirst: false })
     .order('name')
     .limit(500)

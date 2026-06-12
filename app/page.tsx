@@ -20,7 +20,7 @@ export default async function HomePage() {
   const [profileRes, slotsRes, hostsRes, enrollRes, roomsRes, judgesRes] = await Promise.all([
     supabase
       .from('profiles')
-      .select('name, whatsapp, year, can_host_gd, can_host_pi, is_crisp, is_sac')
+      .select('name, whatsapp, year, can_host_gd, can_host_pi, is_crisp, is_sac, is_committee')
       .eq('id', user.id)
       .single(),
     supabase
@@ -40,9 +40,6 @@ export default async function HomePage() {
 
   const profile = profileRes.data
   if (!profile) redirect('/onboarding')
-
-  // SAC's entire world is the rooms page — redirect them immediately
-  if (profile.is_sac) redirect('/admin/rooms')
 
   const isSenior = !!(profile.can_host_gd || profile.can_host_pi)
   const isCrisp = !!profile.is_crisp
@@ -89,10 +86,10 @@ export default async function HomePage() {
         judges={judges}
       />
       <BottomNav
-        isAdmin={isCrisp || !!profile.is_sac}
         isSenior={isSenior}
         isSac={!!profile.is_sac}
         isCrisp={isCrisp}
+        isCommittee={!!profile.is_committee}
       />
     </div>
   )

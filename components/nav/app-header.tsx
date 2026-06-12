@@ -23,10 +23,11 @@ const NotificationBell = dynamic(
 )
 
 const ROLE_META: Record<NavRole, { label: string; cls: string }> = {
-  sac:    { label: 'SAC',    cls: 'bg-purple-500/15 text-purple-400 border border-purple-500/25' },
-  crisp:  { label: 'CRISP',  cls: 'bg-amber-500/15 text-amber-400 border border-amber-500/25' },
-  senior: { label: 'Senior', cls: 'bg-gd-soft text-gd border border-gd/20' },
-  junior: { label: 'Junior', cls: 'bg-muted text-muted-foreground border border-border/60' },
+  sac:       { label: 'SAC',       cls: 'bg-purple-500/15 text-purple-400 border border-purple-500/25' },
+  crisp:     { label: 'CRISP',     cls: 'bg-amber-500/15 text-amber-400 border border-amber-500/25' },
+  committee: { label: 'Committee', cls: 'bg-sky-500/15 text-sky-400 border border-sky-500/25' },
+  senior:    { label: 'Senior',    cls: 'bg-gd-soft text-gd border border-gd/20' },
+  junior:    { label: 'Junior',    cls: 'bg-muted text-muted-foreground border border-border/60' },
 }
 
 export function AppHeader({ name, role }: { name: string; role: NavRole }) {

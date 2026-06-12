@@ -21,7 +21,7 @@ export default async function RolesPage() {
     supabase.from('profiles').select('name, is_crisp, is_sac').eq('id', user.id).single(),
     service
       ? service.from('profiles')
-          .select('id, name, email, year, batch, can_host_gd, can_host_pi, is_crisp, is_sac')
+          .select('id, name, email, year, batch, can_host_gd, can_host_pi, is_crisp, is_sac, is_committee')
           .order('year', { ascending: false, nullsFirst: false })
           .order('name')
           .limit(500)
@@ -66,7 +66,7 @@ export default async function RolesPage() {
 
         <RolesClient profiles={profiles} />
       </div>
-      <BottomNav isAdmin isCrisp={!!profile?.is_crisp} isSac={!!profile?.is_sac} />
+      <BottomNav isCrisp={!!profile?.is_crisp} isSac={!!profile?.is_sac} isSenior={!!profile?.is_crisp || !!profile?.is_sac} />
     </div>
   )
 }

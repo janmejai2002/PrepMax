@@ -16,7 +16,7 @@ export default async function DoubtsPage() {
   const [{ data: profile }, { data: doubts }] = await Promise.all([
     supabase
       .from('profiles')
-      .select('name, is_crisp, is_sac, can_host_gd, can_host_pi')
+      .select('name, is_crisp, is_sac, is_committee, can_host_gd, can_host_pi')
       .eq('id', user.id)
       .single(),
     supabase
@@ -27,14 +27,15 @@ export default async function DoubtsPage() {
   ])
 
   const isCrisp = !!profile?.is_crisp
-  const isAdmin = isCrisp || !!profile?.is_sac
+  const isSac = !!profile?.is_sac
+  const isCommittee = !!profile?.is_committee
   const isSenior = !!(profile?.can_host_gd || profile?.can_host_pi)
 
   return (
     <div className="min-h-screen bg-background pb-nav">
       <AppHeader name={profile?.name ?? ''} role={profileToNavRole(profile ?? {})} />
       <DoubtsFeedClient initialDoubts={(doubts ?? []) as Doubt[]} myUserId={user.id} />
-      <BottomNav isAdmin={isAdmin} isSenior={isSenior} isCrisp={isCrisp} />
+      <BottomNav isSenior={isSenior} isCrisp={isCrisp} isSac={isSac} isCommittee={isCommittee} />
     </div>
   )
 }

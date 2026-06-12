@@ -44,7 +44,7 @@ export default async function MenteeMonitorPage() {
           myId={user.id}
         />
       </div>
-      <BottomNav isCrisp />
+      <BottomNav isCrisp isSenior />
     </div>
   )
 }

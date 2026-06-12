@@ -240,7 +240,6 @@ export default async function PublicProfilePage({
       </div>
 
       <BottomNav
-        isAdmin={!!(viewer?.is_crisp || viewer?.is_sac)}
         isSenior={!!(viewer?.can_host_gd || viewer?.can_host_pi)}
         isCrisp={!!viewer?.is_crisp}
         isSac={!!viewer?.is_sac}

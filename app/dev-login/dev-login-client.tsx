@@ -17,31 +17,38 @@ interface DevPersona {
 const PERSONAS: DevPersona[] = [
   {
     label: 'Junior',
-    description: 'First-year student (b26), no hosting rights, no flags',
+    description: 'First-year student (b26001) — no hosting rights, no flags',
     email: 'b26001@astra.xlri.ac.in',
     password: 'PrepMax@dev1',
     badge: 'bg-muted text-muted-foreground',
   },
   {
-    label: 'Senior (host)',
-    description: 'Second-year (b25), can host GD + PI',
+    label: 'Senior',
+    description: 'Second-year (b25001) — can host GD + PI, base senior nav',
     email: 'b25001@astra.xlri.ac.in',
     password: 'PrepMax@dev1',
     badge: 'bg-gd-soft text-gd',
   },
   {
-    label: 'CRISP committee',
-    description: 'Shared committee login — post view only',
-    email: 'crisp@xlri.ac.in',
+    label: 'CRISP Senior',
+    description: 'Senior (b25002) + CRISP flag — monitoring, admin stats, room management',
+    email: 'b25002@astra.xlri.ac.in',
     password: 'PrepMax@dev1',
-    badge: 'bg-pi-soft text-pi',
+    badge: 'bg-amber-500/15 text-amber-500',
   },
   {
-    label: 'SAC',
-    description: 'Shared SAC login — post view + room edit',
-    email: 'sacdelhi@xlri.ac.in',
+    label: 'SAC Senior',
+    description: 'Senior (b25003) + SAC flag — full senior nav + Rooms tab',
+    email: 'b25003@astra.xlri.ac.in',
     password: 'PrepMax@dev1',
-    badge: 'bg-destructive/15 text-destructive',
+    badge: 'bg-purple-500/15 text-purple-400',
+  },
+  {
+    label: 'Committee Senior',
+    description: 'Senior (b25004) + Committee flag — can post to Knowledge feed',
+    email: 'b25004@astra.xlri.ac.in',
+    password: 'PrepMax@dev1',
+    badge: 'bg-sky-500/15 text-sky-400',
   },
 ]
 
@@ -112,10 +119,10 @@ export function DevLoginClient() {
       </div>
 
       <div className="rounded-xl bg-muted px-4 py-3 space-y-1.5">
-        <p className="text-[11px] font-semibold text-muted-foreground">Credentials (all accounts)</p>
-        <p className="font-mono text-xs">Password: <span className="font-bold">PrepMax@dev1</span></p>
+        <p className="text-[11px] font-semibold text-muted-foreground">All accounts — password</p>
+        <p className="font-mono text-xs font-bold">PrepMax@dev1</p>
         <p className="text-[11px] text-muted-foreground">
-          Students: <code>b26001</code> / <code>b25001</code> · Committee: <code>crisp@</code> / <code>sacdelhi@xlri.ac.in</code>
+          b26001 · b25001 · b25002 · b25003 · b25004 <span className="opacity-60">@astra.xlri.ac.in</span>
         </p>
       </div>
 

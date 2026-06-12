@@ -177,7 +177,7 @@ export default async function MentorPage() {
           </div>
         )}
       </div>
-      <BottomNav isAdmin={isAdmin} isCrisp={!!profile.is_crisp} isSac={!!profile.is_sac} />
+      <BottomNav isCrisp={!!profile.is_crisp} isSac={!!profile.is_sac} isSenior={isAdmin} />
     </div>
   )
 }
