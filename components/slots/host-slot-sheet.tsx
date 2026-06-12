@@ -88,9 +88,13 @@ export function HostSlotSheet({
   const [submitting, setSubmitting] = useState(false)
   const [scheduleOpen, setScheduleOpen] = useState(false)
 
-  const liveRooms = useMemo(() => rooms.filter((r) => r.status !== 'offline'), [rooms])
+  // CRISP/SAC (canManageRooms) can use any non-deleted room; regular seniors see only live rooms.
+  const liveRooms = useMemo(
+    () => capabilities.canManageRooms ? rooms : rooms.filter((r) => r.status !== 'offline'),
+    [rooms, capabilities.canManageRooms]
+  )
   const roomLabel = (r: RoomOption) =>
-    `${r.name}${r.location ? ` · ${r.location}` : ''}${r.status === 'live_occupied' ? ' (in use now)' : ''}`
+    `${r.name}${r.location ? ` · ${r.location}` : ''}${r.status === 'live_occupied' ? ' (in use now)' : r.status === 'offline' ? ' [offline]' : ''}`
   // value→label map so the Select trigger shows the room name, not its id
   const roomItems = useMemo(
     () => Object.fromEntries(liveRooms.map((r) => [r.id, roomLabel(r)])),
