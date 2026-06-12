@@ -38,6 +38,7 @@ export default async function RequestsPage() {
       <RequestsFeedClient
         initialRequests={requests}
         myDomains={[profile.domain_1, profile.domain_2].filter(Boolean) as string[]}
+        hasDomains={!!(profile.domain_1 || profile.domain_2) || !!profile.is_crisp || !!profile.is_sac}
       />
       <BottomNav
         isSenior={isSenior}

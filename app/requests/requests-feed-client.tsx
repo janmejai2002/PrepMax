@@ -9,6 +9,7 @@ import { MapPin, Clock, HandHeart, CheckCircle2, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import type { OpenRequest } from '@/lib/types'
+import { DomainGateDialog } from '@/components/domain-gate-dialog'
 
 function formatRelTime(iso: string) {
   const diff = Date.now() - new Date(iso).getTime()
@@ -33,14 +34,22 @@ function formatPreferred(iso: string) {
 function RequestCard({
   req,
   onInterestToggle,
+  hasDomains,
+  onDomainGate,
 }: {
   req: OpenRequest
   onInterestToggle: (id: string, interested: boolean) => void
+  hasDomains: boolean
+  onDomainGate: () => void
 }) {
   const [pending, startTransition] = useTransition()
   const sb = createClient()
 
   function toggle() {
+    if (!req.i_am_interested && !hasDomains) {
+      onDomainGate()
+      return
+    }
     startTransition(async () => {
       if (req.i_am_interested) {
         const { data } = await sb.rpc('retract_interest', { p_request_id: req.id })
@@ -49,7 +58,15 @@ function RequestCard({
         onInterestToggle(req.id, false)
       } else {
         const { data } = await sb.rpc('express_interest', { p_request_id: req.id })
-        if (data?.error) { toast.error(data.error); return }
+        if (data?.error) {
+          if (data.error === 'no_domains_set') { onDomainGate(); return }
+          if (data.error === 'domain_mismatch') {
+            toast.error(`This request is for ${data.function_tag ?? 'a specific domain'} — not in your areas`)
+            return
+          }
+          toast.error(data.error)
+          return
+        }
         navigator.vibrate?.(50)
         toast.success("You're interested — the junior can see your name now")
         onInterestToggle(req.id, true)
@@ -137,12 +154,15 @@ const ALL_FILTER = 'All'
 export function RequestsFeedClient({
   initialRequests,
   myDomains = [],
+  hasDomains = true,
 }: {
   initialRequests: OpenRequest[]
   myDomains?: string[]
+  hasDomains?: boolean
 }) {
   const [requests, setRequests] = useState(initialRequests)
   const [domainFilter, setDomainFilter] = useState<string>(ALL_FILTER)
+  const [domainGateOpen, setDomainGateOpen] = useState(false)
 
   const filterOptions = [
     ALL_FILTER,
@@ -210,10 +230,17 @@ export function RequestsFeedClient({
       ) : (
         <div className="space-y-3">
           {filtered.map((r) => (
-            <RequestCard key={r.id} req={r} onInterestToggle={handleInterestToggle} />
+            <RequestCard
+              key={r.id}
+              req={r}
+              onInterestToggle={handleInterestToggle}
+              hasDomains={hasDomains}
+              onDomainGate={() => setDomainGateOpen(true)}
+            />
           ))}
         </div>
       )}
+      <DomainGateDialog open={domainGateOpen} onOpenChange={setDomainGateOpen} />
     </div>
   )
 }

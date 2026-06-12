@@ -20,7 +20,7 @@ export default async function HomePage() {
   const [profileRes, slotsRes, hostsRes, enrollRes, roomsRes, judgesRes] = await Promise.all([
     supabase
       .from('profiles')
-      .select('name, whatsapp, year, can_host_gd, can_host_pi, is_crisp, is_sac, is_committee')
+      .select('name, whatsapp, year, can_host_gd, can_host_pi, is_crisp, is_sac, is_committee, domain_1, domain_2')
       .eq('id', user.id)
       .single(),
     supabase
@@ -89,6 +89,7 @@ export default async function HomePage() {
         canJoinSlots={!isSenior}
         rooms={rooms}
         judges={judges}
+        hasDomains={!!(profile.domain_1 || profile.domain_2) || isCrisp || !!profile.is_sac}
       />
       <BottomNav
         isSenior={isSenior}

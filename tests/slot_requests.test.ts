@@ -48,6 +48,8 @@ async function makeUser(email: string, canHost = false): Promise<string> {
     is_crisp: false, is_sac: false,
     whatsapp: canHost ? '919876543210' : null,
     phone: canHost ? '9876543210' : null,
+    domain_1: canHost ? 'Finance' : null,
+    domain_2: canHost ? 'Consulting' : null,
   }, { onConflict: 'id' })
   return uid
 }

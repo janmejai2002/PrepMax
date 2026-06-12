@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import dynamic from 'next/dynamic'
 import { SlotCard } from './slot-card'
+import { DomainGateDialog } from '@/components/domain-gate-dialog'
 
 const HostSlotSheet = dynamic(() =>
   import('./host-slot-sheet').then((m) => ({ default: m.HostSlotSheet })),
@@ -31,6 +32,7 @@ interface SlotsFeedProps {
   canJoinSlots?: boolean
   rooms: RoomOption[]
   judges: JudgeOption[]
+  hasDomains?: boolean
 }
 
 const FILTERS: { value: Filter; label: string }[] = [
@@ -55,12 +57,14 @@ export function SlotsFeed({
   canJoinSlots = true,
   rooms,
   judges,
+  hasDomains = true,
 }: SlotsFeedProps) {
   const [slots, setSlots] = useState<FeedSlot[]>(initialSlots)
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
   const [view, setView] = useState<View>('discover')
   const [hostOpen, setHostOpen] = useState(false)
+  const [domainGateOpen, setDomainGateOpen] = useState(false)
 
   // canManageRooms is for the /admin/rooms page, not for creating slots.
   // Committee accounts with canManageRooms should NOT see the hosting form here.
@@ -263,7 +267,7 @@ export function SlotsFeed({
       {canHost && (
         <>
           <button
-            onClick={() => setHostOpen(true)}
+            onClick={() => hasDomains ? setHostOpen(true) : setDomainGateOpen(true)}
             className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-1/2 z-40 flex h-12 -translate-x-1/2 items-center gap-2 rounded-full bg-foreground px-5 text-sm font-semibold text-background shadow-lg shadow-black/25 transition-transform active:scale-95"
             aria-label="Host a slot"
           >
@@ -280,6 +284,7 @@ export function SlotsFeed({
             judges={judges}
             onCreated={handleSlotCreated}
           />
+          <DomainGateDialog open={domainGateOpen} onOpenChange={setDomainGateOpen} />
         </>
       )}
     </div>
