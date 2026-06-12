@@ -167,7 +167,7 @@ export default async function AdminStatsPage() {
           <RoomNowClient initialRooms={rooms} />
         </div>
       </div>
-      <BottomNav isAdmin isCrisp />
+      <BottomNav isAdmin isCrisp={!!profile?.is_crisp} isSac={!!profile?.is_sac} />
     </div>
   )
 }

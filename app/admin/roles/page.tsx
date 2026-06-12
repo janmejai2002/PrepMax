@@ -66,7 +66,7 @@ export default async function RolesPage() {
 
         <RolesClient profiles={profiles} />
       </div>
-      <BottomNav isAdmin isCrisp />
+      <BottomNav isAdmin isCrisp={!!profile?.is_crisp} isSac={!!profile?.is_sac} />
     </div>
   )
 }
