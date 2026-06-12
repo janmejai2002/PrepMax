@@ -67,15 +67,18 @@ function SeniorRow({
   requestId,
   juniorName,
   onConfirmed,
+  onRetracted,
 }: {
   senior: InterestedSenior
   requestId: string
   juniorName: string
   onConfirmed: (requestId: string, seniorId: string, seniorName: string, waUrl: string | null) => void
+  onRetracted: (requestId: string, seniorId: string) => void
 }) {
   const [pending, startTransition] = useTransition()
   const sb = createClient()
   const waUrl = buildWaUrl(senior, juniorName)
+  const isConfirmed = senior.status === 'confirmed'
 
   function confirmMatch() {
     startTransition(async () => {
@@ -85,37 +88,83 @@ function SeniorRow({
       })
       if (data?.error) { toast.error(data.error); return }
       navigator.vibrate?.([50, 50, 100])
-      onConfirmed(requestId, senior.senior_id, senior.name, buildWaUrl(senior, juniorName))
+      const wa = buildWaUrl(senior, juniorName)
+      if (wa) window.open(wa, '_blank')
+      onConfirmed(requestId, senior.senior_id, senior.name, wa)
+    })
+  }
+
+  function retractConfirmation() {
+    startTransition(async () => {
+      const { data } = await sb.rpc('retract_confirmation', {
+        p_request_id: requestId,
+        p_senior_id: senior.senior_id,
+      })
+      if (data?.error) { toast.error(data.error); return }
+      toast.success(`Confirmation retracted for ${senior.name}`)
+      onRetracted(requestId, senior.senior_id)
     })
   }
 
   return (
     <div className="flex items-center justify-between py-2 border-b border-border/40 last:border-0">
-      <div>
-        <p className="text-sm font-medium">{senior.name}</p>
-        <p className="text-xs text-muted-foreground">
-          {new Date(senior.interested_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
-        </p>
+      <div className="flex items-center gap-2 min-w-0">
+        {isConfirmed && (
+          <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-green-600" />
+        )}
+        <div>
+          <p className={cn('text-sm font-medium', isConfirmed && 'text-green-700 dark:text-green-400')}>
+            {senior.name}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {isConfirmed ? 'Confirmed' : new Date(senior.interested_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+          </p>
+        </div>
       </div>
       <div className="flex items-center gap-2">
-        {waUrl && (
-          <a href={waUrl} target="_blank" rel="noreferrer">
-            <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs">
-              <MessageCircle className="h-3.5 w-3.5" />
-              WhatsApp
+        {isConfirmed ? (
+          <>
+            {waUrl && (
+              <a href={waUrl} target="_blank" rel="noreferrer">
+                <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs">
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  Chat
+                </Button>
+              </a>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 h-8 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+              disabled={pending}
+              onClick={retractConfirmation}
+            >
+              <X className="h-3.5 w-3.5" />
+              Retract
             </Button>
-          </a>
+          </>
+        ) : (
+          <>
+            {waUrl && (
+              <a href={waUrl} target="_blank" rel="noreferrer">
+                <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs">
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  WhatsApp
+                </Button>
+              </a>
+            )}
+            <Button
+              size="sm"
+              variant="default"
+              className="gap-1.5 h-8 text-xs bg-blue-600 hover:bg-blue-700"
+              disabled={pending}
+              onClick={confirmMatch}
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Confirm
+            </Button>
+          </>
         )}
-        <Button
-          size="sm"
-          variant="default"
-          className="gap-1.5 h-8 text-xs bg-blue-600 hover:bg-blue-700"
-          disabled={pending}
-          onClick={confirmMatch}
-        >
-          <CheckCircle2 className="h-3.5 w-3.5" />
-          Confirm
-        </Button>
       </div>
     </div>
   )
@@ -126,11 +175,13 @@ function RequestCard({
   juniorName,
   onCancelled,
   onConfirmed,
+  onRetracted,
 }: {
   req: MySlotRequest
   juniorName: string
   onCancelled: (id: string) => void
   onConfirmed: (requestId: string, seniorId: string, seniorName: string, waUrl: string | null) => void
+  onRetracted: (requestId: string, seniorId: string) => void
 }) {
   const [pending, startTransition] = useTransition()
   const sb = createClient()
@@ -220,6 +271,7 @@ function RequestCard({
                       requestId={req.id}
                       juniorName={juniorName}
                       onConfirmed={onConfirmed}
+                      onRetracted={onRetracted}
                     />
                   ))}
                 </div>
@@ -458,6 +510,25 @@ export function MyRequestsClient({
           status: nowMatched ? 'matched' as const : r.status,
           matched_senior_id: nowMatched ? seniorId : r.matched_senior_id,
           matched_at: nowMatched ? new Date().toISOString() : r.matched_at,
+          interested_seniors: r.interested_seniors.map((s) =>
+            s.senior_id === seniorId ? { ...s, status: 'confirmed' as const } : s
+          ),
+        }
+      })
+    )
+  }
+
+  function handleRetracted(requestId: string, seniorId: string) {
+    setRequests((prev) =>
+      prev.map((r) => {
+        if (r.id !== requestId) return r
+        return {
+          ...r,
+          confirmed_count: Math.max(0, (r.confirmed_count ?? 0) - 1),
+          status: 'open' as const,
+          interested_seniors: r.interested_seniors.map((s) =>
+            s.senior_id === seniorId ? { ...s, status: 'pending' as const } : s
+          ),
         }
       })
     )
@@ -490,6 +561,7 @@ export function MyRequestsClient({
               juniorName={userName}
               onCancelled={handleCancelled}
               onConfirmed={handleConfirmed}
+              onRetracted={handleRetracted}
             />
           ))}
         </div>

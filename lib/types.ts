@@ -190,6 +190,7 @@ export interface InterestedSenior {
   whatsapp: string
   phone: string
   interested_at: string
+  status: 'pending' | 'confirmed' | 'declined'
 }
 
 export interface MySlotRequest {

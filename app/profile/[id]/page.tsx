@@ -25,7 +25,7 @@ interface PublicProfile {
   year: 'first' | 'second' | null
   batch: string | null
   section: string | null
-  bio: string | null
+  short_bio: string | null
   // junior fields
   slots_joined?: number
   slots_attended?: number

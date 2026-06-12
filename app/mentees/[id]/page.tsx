@@ -20,7 +20,7 @@ interface MenteeFull {
   roll: string | null
   year: string | null
   ug_degree: string | null
-  bio: string | null
+  short_bio: string | null
   domain_1: string | null
   domain_2: string | null
   whatsapp: string | null
