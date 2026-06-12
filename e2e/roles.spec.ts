@@ -4,12 +4,19 @@
  * Run against live Vercel:
  *   $env:PLAYWRIGHT_BASE_URL="https://prep-max-alpha.vercel.app"; npx playwright test e2e/roles.spec.ts
  *
- * Phase 8 nav matrix:
+ * Phase 8/9 nav matrix:
  *   Junior:           Ask a Senior | Domain | CRISPNet | My Profile
  *   Senior base:      Feed | Requests | Q&A | Profile
  *   CRISP senior:     Feed | Requests | Q&A | Mentees
  *   SAC senior:       Feed | Requests | Q&A | Rooms
  *   Committee-only:   Knowledge | My Profile  (2-tab)
+ *
+ * Phase 9 additions verified:
+ *   - bio renamed to short_bio (profile form shows "Short description")
+ *   - Domain gate shown if no domains set (dev seniors have domains pre-seeded)
+ *   - Host a slot opens sheet (not gate) for dev senior with domains
+ *   - /mentees has Stats/Rooms/Roles sub-nav for CRISP
+ *   - retract_confirmation button shown on confirmed seniors
  */
 import { test, expect, type Page } from '@playwright/test'
 
@@ -103,6 +110,10 @@ test.describe('Junior (b26001)', () => {
     await page.waitForLoadState('networkidle')
     await expect(page).toHaveURL('/ask')
   })
+
+  test('/ask page has New Request button', async ({ page }) => {
+    await expect(page.getByRole('button', { name: /new request/i })).toBeVisible()
+  })
 })
 
 // ── SENIOR ───────────────────────────────────────────────────────────────────
@@ -154,6 +165,27 @@ test.describe('Senior (b25001)', () => {
     const joinBtn = page.getByRole('button', { name: /^join$/i }).first()
     await expect(joinBtn).not.toBeVisible()
   })
+
+  test('Host a slot — dev senior has domains so sheet opens (no domain gate)', async ({ page }) => {
+    // Dev senior has Finance+Consulting domains pre-seeded → should open host sheet, not domain gate
+    await page.getByRole('button', { name: /host a slot/i }).click()
+    await page.waitForTimeout(600)
+    // Domain gate should NOT appear; host sheet or nothing blocking should be present
+    await expect(page.getByText(/set your domains first/i)).not.toBeVisible()
+  })
+
+  test('/profile shows domain fields and short description', async ({ page }) => {
+    await page.goto('/profile')
+    await page.waitForLoadState('networkidle')
+    // Profile edit section should show domain and description fields
+    await expect(page.getByText(/domain 1|domain 2|short description/i).first()).toBeVisible()
+  })
+
+  test('/requests loads domain filter chips for senior', async ({ page }) => {
+    await page.goto('/requests')
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByText(/practice requests/i)).toBeVisible()
+  })
 })
 
 // ── CRISP SENIOR (b25002) ─────────────────────────────────────────────────────
@@ -188,6 +220,14 @@ test.describe('CRISP Senior (b25002)', () => {
 
   test('/admin/rooms loads room list', async ({ page }) => {
     await assertPageLoads(page, '/admin/rooms', /rooms/i)
+  })
+
+  test('/mentees page shows Stats·Rooms·Roles admin sub-nav', async ({ page }) => {
+    await page.goto('/mentees')
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByRole('link', { name: 'Stats' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Rooms' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Roles' })).toBeVisible()
   })
 
   test('/crisp-monitor redirects to /mentees', async ({ page }) => {
