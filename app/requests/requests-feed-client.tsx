@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { MapPin, Clock, HandHeart, CheckCircle2, Users } from 'lucide-react'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 import type { OpenRequest } from '@/lib/types'
 
 function formatRelTime(iso: string) {
@@ -60,15 +61,27 @@ function RequestCard({
     <Card className="border-border/60">
       <CardHeader className="pb-2 pt-4 px-4">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
               <MapPin className="h-3.5 w-3.5 shrink-0" />
               <span className="font-medium text-foreground">{req.location}</span>
-              <span className="mx-1">·</span>
+              <span className="opacity-40">|</span>
               <Clock className="h-3.5 w-3.5 shrink-0" />
               <span>{formatPreferred(req.preferred_at)}</span>
+              {req.interviewer_count && req.interviewer_count > 1 && (
+                <span className="rounded-full bg-pi-soft text-pi px-1.5 py-0.5 text-[10px] font-bold">
+                  {req.interviewer_count} interviewers
+                </span>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground">{formatRelTime(req.created_at)}</p>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs text-muted-foreground">{formatRelTime(req.created_at)}</span>
+              {req.function_tag && (
+                <span className="rounded-full bg-gd-soft text-gd px-2 py-0.5 text-[10px] font-medium">
+                  {req.function_tag}
+                </span>
+              )}
+            </div>
           </div>
           <Badge variant="secondary" className="shrink-0 text-xs gap-1">
             <Users className="h-3 w-3" />
@@ -110,7 +123,7 @@ function RequestCard({
           ) : (
             <>
               <HandHeart className="h-4 w-4" />
-              I'm available to help
+              Available to help
             </>
           )}
         </Button>
@@ -119,12 +132,29 @@ function RequestCard({
   )
 }
 
+const ALL_FILTER = 'All'
+
 export function RequestsFeedClient({
   initialRequests,
+  myDomains = [],
 }: {
   initialRequests: OpenRequest[]
+  myDomains?: string[]
 }) {
   const [requests, setRequests] = useState(initialRequests)
+  const [domainFilter, setDomainFilter] = useState<string>(ALL_FILTER)
+
+  const filterOptions = [
+    ALL_FILTER,
+    ...(myDomains.length > 0 ? ['My domains'] : []),
+    ...Array.from(new Set(requests.map(r => r.function_tag).filter(Boolean))) as string[],
+  ]
+
+  const filtered = domainFilter === ALL_FILTER
+    ? requests
+    : domainFilter === 'My domains'
+    ? requests.filter(r => r.function_tag && myDomains.includes(r.function_tag))
+    : requests.filter(r => r.function_tag === domainFilter)
 
   function handleInterestToggle(id: string, interested: boolean) {
     setRequests((prev) =>
@@ -142,22 +172,44 @@ export function RequestsFeedClient({
 
   return (
     <div className="mx-auto max-w-md px-4 pt-6">
-      <div className="mb-5">
+      <div className="mb-4">
         <h1 className="text-xl font-bold">Practice Requests</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Juniors looking for practice sessions — identities revealed only after they confirm you.
         </p>
       </div>
 
-      {requests.length === 0 ? (
+      {/* Domain filter chips */}
+      {filterOptions.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none mb-4">
+          {filterOptions.map(f => (
+            <button
+              key={f}
+              onClick={() => setDomainFilter(f)}
+              className={cn(
+                'shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors',
+                domainFilter === f
+                  ? 'bg-gd text-white'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              )}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {filtered.length === 0 ? (
         <div className="py-16 text-center text-muted-foreground">
           <HandHeart className="mx-auto h-10 w-10 mb-3 opacity-30" />
-          <p className="font-medium">No open requests right now</p>
+          <p className="font-medium">
+            {domainFilter !== ALL_FILTER ? 'No requests in this domain' : 'No open requests right now'}
+          </p>
           <p className="text-sm mt-1">Check back later — juniors post requests around evenings.</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {requests.map((r) => (
+          {filtered.map((r) => (
             <RequestCard key={r.id} req={r} onInterestToggle={handleInterestToggle} />
           ))}
         </div>

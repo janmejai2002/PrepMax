@@ -217,6 +217,9 @@ export interface OpenRequest {
   created_at: string
   interest_count: number
   i_am_interested: boolean
+  function_tag?: string | null
+  interviewer_count?: number
+  confirmed_count?: number
 }
 
 /** Full payload from the confirm_slot RPC. `error` is set on the failure path. */

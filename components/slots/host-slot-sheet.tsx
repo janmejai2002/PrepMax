@@ -84,6 +84,7 @@ export function HostSlotSheet({
   const [gdTypeDesc, setGdTypeDesc] = useState('')
   const [coJudges, setCoJudges] = useState<Set<string>>(new Set())
   const [judgeFilter, setJudgeFilter] = useState('')
+  const [visibility, setVisibility] = useState<'public' | 'mentees_only'>('public')
   const [submitting, setSubmitting] = useState(false)
   const [scheduleOpen, setScheduleOpen] = useState(false)
 
@@ -130,6 +131,7 @@ export function HostSlotSheet({
     setGdTypeDesc('')
     setCoJudges(new Set())
     setJudgeFilter('')
+    setVisibility('public')
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -161,6 +163,7 @@ export function HostSlotSheet({
       p_description:  description.trim(),
       p_gd_type_desc: type === 'GD' ? gdTypeDesc.trim() : '',
       p_judge_ids:    [...coJudges],
+      p_visibility:   visibility,
     })
 
     setSubmitting(false)
@@ -449,6 +452,32 @@ export function HostSlotSheet({
                 </div>
               </div>
             )}
+            {/* visibility */}
+            <div className="space-y-1.5">
+              <Label>Visibility</Label>
+              <div className="flex gap-2">
+                {(['public', 'mentees_only'] as const).map(v => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setVisibility(v)}
+                    className={cn(
+                      'flex-1 rounded-xl border py-2.5 text-sm font-medium transition-colors',
+                      visibility === v
+                        ? 'border-foreground bg-foreground text-background'
+                        : 'border-border hover:bg-secondary text-muted-foreground'
+                    )}
+                  >
+                    {v === 'public' ? 'Public' : 'My mentees only'}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                {visibility === 'mentees_only'
+                  ? 'Only your assigned juniors will see this slot.'
+                  : 'All eligible juniors can see and join this slot.'}
+              </p>
+            </div>
           </div>
 
           {/* footer action */}

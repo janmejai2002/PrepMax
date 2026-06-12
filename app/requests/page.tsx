@@ -16,7 +16,7 @@ export default async function RequestsPage() {
   const [{ data: profile }, { data: raw }] = await Promise.all([
     supabase
       .from('profiles')
-      .select('name, year, can_host_gd, can_host_pi, is_crisp, is_sac, is_committee')
+      .select('name, year, can_host_gd, can_host_pi, is_crisp, is_sac, is_committee, domain_1, domain_2')
       .eq('id', user.id)
       .single(),
     supabase.rpc('get_open_requests'),
@@ -35,7 +35,10 @@ export default async function RequestsPage() {
   return (
     <div className="min-h-screen bg-background pb-nav">
       <AppHeader name={profile.name} role={profileToNavRole(profile)} />
-      <RequestsFeedClient initialRequests={requests} />
+      <RequestsFeedClient
+        initialRequests={requests}
+        myDomains={[profile.domain_1, profile.domain_2].filter(Boolean) as string[]}
+      />
       <BottomNav
         isSenior={isSenior}
         isCrisp={!!profile.is_crisp}
