@@ -124,7 +124,7 @@ export default async function ProfilePage() {
 
         <ProfileEditClient
           ug_degree={profile.ug_degree ?? null}
-          bio={profile.bio ?? null}
+          short_bio={profile.short_bio ?? null}
           domain_1={profile.domain_1 ?? null}
           domain_2={profile.domain_2 ?? null}
         />

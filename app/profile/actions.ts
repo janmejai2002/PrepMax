@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 
 export async function updateProfile(data: {
   ug_degree: string
-  bio: string
+  short_bio: string
   domain_1: string
   domain_2: string
 }) {
@@ -17,7 +17,7 @@ export async function updateProfile(data: {
     .from('profiles')
     .update({
       ug_degree: data.ug_degree.trim() || null,
-      bio:       data.bio.trim()       || null,
+      short_bio: data.short_bio.trim() || null,
       domain_1:  data.domain_1         || null,
       domain_2:  data.domain_2         || null,
     })

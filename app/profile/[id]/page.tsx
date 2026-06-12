@@ -120,10 +120,10 @@ export default async function PublicProfilePage({
         </div>
 
         {/* Bio */}
-        {profile.bio && (
+        {profile.short_bio && (
           <div className="rounded-2xl border bg-card p-4">
             <p className="text-xs font-semibold text-muted-foreground mb-1">About</p>
-            <p className="text-sm leading-relaxed">{profile.bio}</p>
+            <p className="text-sm leading-relaxed">{profile.short_bio}</p>
           </div>
         )}
 

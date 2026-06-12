@@ -36,7 +36,7 @@ const studentSchema = z.object({
   section: z.string().min(1, 'Required'),
   roll: z.string().min(1, 'Required'),
   mentor_id: z.string().optional(),
-  bio: z.string().max(300).optional(),
+  short_bio: z.string().max(300).optional(),
 })
 
 const committeeSchema = z.object({
@@ -79,7 +79,7 @@ export default function OnboardingForm({ userId, email, mentors }: Props) {
       section: '',
       roll: '',
       mentor_id: undefined,
-      bio: '',
+      short_bio: '',
     },
   })
 
@@ -90,7 +90,7 @@ export default function OnboardingForm({ userId, email, mentors }: Props) {
       ...values,
       year: isCommittee ? null : (values.year ?? inferredYear ?? 'first'),
       mentor_id: values.mentor_id || null,
-      bio: values.bio?.trim() || null,
+      short_bio: values.short_bio?.trim() || null,
     })
 
     if (error) {
@@ -228,7 +228,7 @@ export default function OnboardingForm({ userId, email, mentors }: Props) {
 
         <FormField
           control={form.control}
-          name="bio"
+          name="short_bio"
           render={({ field }) => (
             <FormItem>
               <FormLabel>

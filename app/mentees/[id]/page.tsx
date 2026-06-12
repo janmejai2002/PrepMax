@@ -88,7 +88,7 @@ export default async function MenteeDetailPage({
   const [menteeRes, stats360Res, feedbackRes, tasksRes] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, name, email, batch, section, roll, year, ug_degree, bio, domain_1, domain_2, whatsapp, phone')
+      .select('id, name, email, batch, section, roll, year, ug_degree, short_bio, domain_1, domain_2, whatsapp, phone')
       .eq('id', menteeId)
       .single(),
     supabase
@@ -171,9 +171,9 @@ export default async function MenteeDetailPage({
                 {[mentee.domain_1, mentee.domain_2].filter(Boolean).join(', ')}
               </dd>
             </>)}
-            {mentee.bio && (<>
+            {mentee.short_bio && (<>
               <dt className="text-muted-foreground text-[11px] col-span-2">Short description</dt>
-              <dd className="text-[12px] text-foreground/80 col-span-2 leading-snug">{mentee.bio}</dd>
+              <dd className="text-[12px] text-foreground/80 col-span-2 leading-snug">{mentee.short_bio}</dd>
             </>)}
           </dl>
         </section>

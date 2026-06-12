@@ -7,16 +7,16 @@ import { FUNCTION_TAGS } from '@/lib/types'
 import { updateProfile } from './actions'
 
 interface Props {
-  ug_degree: string | null
-  bio:       string | null
-  domain_1:  string | null
-  domain_2:  string | null
+  ug_degree:  string | null
+  short_bio:  string | null
+  domain_1:   string | null
+  domain_2:   string | null
 }
 
-export function ProfileEditClient({ ug_degree, bio, domain_1, domain_2 }: Props) {
+export function ProfileEditClient({ ug_degree, short_bio, domain_1, domain_2 }: Props) {
   const [editing, setEditing] = useState(false)
   const [ugDegree, setUgDegree]   = useState(ug_degree ?? '')
-  const [bioVal, setBioVal]       = useState(bio ?? '')
+  const [bioVal, setBioVal]       = useState(short_bio ?? '')
   const [d1, setD1]               = useState(domain_1 ?? '')
   const [d2, setD2]               = useState(domain_2 ?? '')
   const [err, setErr]             = useState('')
@@ -24,7 +24,7 @@ export function ProfileEditClient({ ug_degree, bio, domain_1, domain_2 }: Props)
 
   function cancel() {
     setUgDegree(ug_degree ?? '')
-    setBioVal(bio ?? '')
+    setBioVal(short_bio ?? '')
     setD1(domain_1 ?? '')
     setD2(domain_2 ?? '')
     setErr('')
@@ -38,7 +38,7 @@ export function ProfileEditClient({ ug_degree, bio, domain_1, domain_2 }: Props)
     }
     setErr('')
     startTransition(async () => {
-      const res = await updateProfile({ ug_degree: ugDegree, bio: bioVal, domain_1: d1, domain_2: d2 })
+      const res = await updateProfile({ ug_degree: ugDegree, short_bio: bioVal, domain_1: d1, domain_2: d2 })
       if (res?.error) { setErr(res.error); return }
       setEditing(false)
     })
@@ -59,7 +59,7 @@ export function ProfileEditClient({ ug_degree, bio, domain_1, domain_2 }: Props)
         </div>
         {[
           ['UG Degree',         ug_degree],
-          ['Short description', bio],
+          ['Short description', short_bio],
           ['Domain 1',          domain_1],
           ['Domain 2',          domain_2],
         ].map(([label, value]) => (
