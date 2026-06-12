@@ -84,12 +84,17 @@
 
 Run `npx tsx scripts/seed-dev-users.ts` to create these accounts (idempotent).
 
-| Email | Type | Password |
+All 5 personas are b25/b26 student accounts — no more shared @xlri.ac.in logins.
+
+| Email | Persona | Password |
 |---|---|---|
 | `b26001@astra.xlri.ac.in` | Junior (first-year, no flags) | `PrepMax@dev1` |
-| `b25001@astra.xlri.ac.in` | Senior (can host GD+PI) | `PrepMax@dev1` |
-| `crisp@xlri.ac.in` | CRISP shared login (is_crisp=true, year=null) | `PrepMax@dev1` |
-| `sacdelhi@xlri.ac.in` | SAC shared login (is_sac=true, year=null) | `PrepMax@dev1` |
+| `b25001@astra.xlri.ac.in` | Senior (can host GD+PI, no special flags) | `PrepMax@dev1` |
+| `b25002@astra.xlri.ac.in` | CRISP Senior (is_crisp=true + host) | `PrepMax@dev1` |
+| `b25003@astra.xlri.ac.in` | SAC Senior (is_sac=true + host) | `PrepMax@dev1` |
+| `b25004@astra.xlri.ac.in` | Committee Senior (is_committee=true + host) | `PrepMax@dev1` |
+
+**b25349@astra.xlri.ac.in** is the max-permission developer account (all flags true: can_host_gd/pi + is_crisp + is_sac + is_committee). Use it to see everything.
 
 Dev login URL (local): http://localhost:3000/dev-login
 Dev login URL (prod): https://prep-max-alpha.vercel.app/dev-login (ALLOW_DEV_LOGIN=true set in Vercel)
@@ -186,7 +191,12 @@ Magic link works right now without any extra config.
 
 ## Exact Next Step (open this at the start of the next session)
 
-Start by activating email notifications (see "Actions still required" above — it's a 15-min Supabase dashboard task). Then onboard the CRISP committee as first real users and observe any issues.
+**DECISION NEEDED from Janmejai (see Part C review):**
+Should base seniors (no committee flag) see the Knowledge tab in their nav?
+- Recommendation: YES — Knowledge is prep content, everyone should read it. Only the Post button is gated.
+- Alternative: NO — remove Knowledge from senior base nav (3 tabs: Feed/Requests/Doubts). Confirm to implement.
+
+After that decision: activate email notifications (15-min Supabase dashboard task — see "Actions still required" above). Then onboard the CRISP committee as first real users.
 
 ## Possible Future Enhancements (V2)
 - No-show penalty: 24h booking cooldown after 2 no-shows in 7 days (config-flagged — data path already built)
@@ -223,3 +233,4 @@ Start by activating email notifications (see "Actions still required" above — 
 | 2026-06-12 | Session 22: In-app notification system (migration 026): notifications table + RLS + realtime, NotificationBell component (header bell + unread badge + Sheet panel + realtime subscription). Confirm_match v3: ±90min host scheduling conflict guard. All 8 notification triggers wired (match_confirmed, interest_expressed, non_chosen, request_cancelled, waitlist_promoted, slot_cancelled, slot_edited, mentee_added). Migration 027: fixed leave_slot + cancel_slot return shapes. Migration 028: edit_slot v4 host self-overlap check. RoomScheduleSheet: 3-day availability grid in hosting flow. Haptics: navigator.vibrate on join/leave/confirm-match/interest/post-request/room-toggle. 153/153 tests. |
 | 2026-06-12 | Session 23: Performance pass (item 7) + haptics (item 9). All serial DB waterfalls collapsed to Promise.all on all pages. Dynamic imports for HostSlotSheet + EditSlotSheet. navigator.vibrate on 6 interaction points. 153/153 tests. |
 | 2026-06-12 | Session 24: QA/E2E (item 8) COMPLETE. Playwright test suite: 32/32 passing on live Vercel site at 390px mobile. Root cause of ALL page crashes found via Vercel logs: `profileToNavRole` was exported from `app-header.tsx` ('use client') and called directly by 13 server components — Next.js 16 throws "Attempted to call profileToNavRole() from the server but profileToNavRole is on the client." Fix: moved `profileToNavRole` + `NavRole` type to `lib/nav-role.ts` (no directive), updated all 13 server pages. Also: NotificationBell dynamic-imported with ssr:false; try-catch on createServiceClient() in /knowledge + /admin/roles; dev-senior profile data bug (is_crisp=true) fixed via SQL. 153/153 Vitest + 32/32 Playwright. |
+| 2026-06-12 | Session 25: Additive permission model. Part A: SAC/CRISP flags now ADD to senior nav instead of replacing it. Removed `if (is_sac) redirect('/admin/rooms')` from app/page.tsx and removed `if (is_crisp \|\| is_sac) redirect('/knowledge')` from requests/my-requests pages. New BottomNav: Junior=Feed/Requests/Knowledge/Doubts; Senior=Feed/Requests/Doubts/Knowledge; +CRISP=Feed/Requests/Doubts/Admin; +SAC=Feed/Requests/Doubts/Rooms; +Committee=same as senior with Post button. Part B: Migration 029 adds is_committee flag. b25349 promoted to all-flags dev account. Old crisp@/sacdelhi@ shared logins deleted. 5 new dev personas (b25002 CRISP, b25003 SAC, b25004 Committee). /dev-login updated. Role portal shows is_committee chip. Part C: Full Mermaid architecture diagram + permission matrix delivered in session. Key flags: Knowledge tab ambiguity for base seniors (user decision pending); /mentor access inconsistency; SAC can't discover stats. 163/163 Vitest. E2E tests updated for new personas (not re-run against live yet — Vercel deploying). |
