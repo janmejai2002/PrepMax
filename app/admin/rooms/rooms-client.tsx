@@ -16,7 +16,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import { Plus, Pencil, Bell } from 'lucide-react'
+import { Plus, Pencil, Bell, Users, ExternalLink } from 'lucide-react'
+import { waPhone } from '@/lib/format'
 import { notifyCrispMembers } from './actions'
 
 interface Room {
@@ -27,9 +28,20 @@ interface Room {
   is_live: boolean
 }
 
+interface Occupant {
+  type: string
+  topic: string | null
+  enrolled: number
+  capacity: number
+  host_name: string | null
+  host_whatsapp: string | null
+  end_at: string
+}
+
 interface Props {
   initialRooms: Room[]
   isSac?: boolean
+  occupancy?: Record<string, Occupant>
 }
 
 type RoomForm = { name: string; location: string; capacity: string }
@@ -81,7 +93,7 @@ function RoomFormFields({
   )
 }
 
-export default function RoomsClient({ initialRooms, isSac = false }: Props) {
+export default function RoomsClient({ initialRooms, isSac = false, occupancy = {} }: Props) {
   const [rooms, setRooms] = useState<Room[]>(initialRooms)
 
   const [addOpen, setAddOpen] = useState(false)
@@ -263,38 +275,72 @@ export default function RoomsClient({ initialRooms, isSac = false }: Props) {
         </p>
       )}
 
-      {rooms.map((room) => (
-        <Card key={room.id}>
-          <CardContent className="flex items-center justify-between gap-4 py-4">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-medium text-sm truncate">{room.name}</span>
-                <Badge variant={room.is_live ? 'default' : 'secondary'} className="shrink-0">
-                  {room.is_live ? 'Live' : 'Offline'}
-                </Badge>
+      {rooms.map((room) => {
+        const occ = occupancy[room.id]
+        const wa = occ?.host_whatsapp ? waPhone(occ.host_whatsapp) : null
+        return (
+          <Card key={room.id}>
+            <CardContent className="py-4 space-y-2">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-sm truncate">{room.name}</span>
+                    <Badge variant={room.is_live ? 'default' : 'secondary'} className="shrink-0">
+                      {room.is_live ? (occ ? 'Occupied' : 'Available') : 'Offline'}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {room.location ?? '—'} · {room.capacity} seats
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    onClick={() => setEditRoom(room)}
+                    aria-label={`Edit ${room.name}`}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Switch
+                    checked={room.is_live}
+                    onCheckedChange={() => toggleLive(room)}
+                    aria-label={`Toggle ${room.name}`}
+                  />
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {room.location ?? '—'} · {room.capacity} seats
-              </p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Button
-                size="icon-sm"
-                variant="ghost"
-                onClick={() => setEditRoom(room)}
-                aria-label={`Edit ${room.name}`}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Switch
-                checked={room.is_live}
-                onCheckedChange={() => toggleLive(room)}
-                aria-label={`Toggle ${room.name}`}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+
+              {/* Occupancy strip */}
+              {occ && (
+                <div className="rounded-lg bg-muted/70 px-3 py-2 flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${occ.type === 'GD' ? 'bg-gd-soft text-gd' : 'bg-pi-soft text-pi'}`}>
+                      {occ.type}
+                    </span>
+                    <span className="text-xs font-medium truncate">{occ.host_name ?? 'Unknown host'}</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground">
+                      <Users className="h-3 w-3" />
+                      {occ.enrolled}/{occ.capacity}
+                    </span>
+                    {wa && (
+                      <a
+                        href={`https://wa.me/${wa}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-0.5 text-[11px] text-success font-medium hover:underline"
+                      >
+                        WhatsApp <ExternalLink className="h-2.5 w-2.5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )
+      })}
     </div>
   )
 }

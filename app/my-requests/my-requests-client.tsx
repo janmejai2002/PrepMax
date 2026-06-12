@@ -33,8 +33,9 @@ import {
   ClipboardList,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 import type { MySlotRequest, InterestedSenior } from '@/lib/types'
-import { REQUEST_LOCATIONS } from '@/lib/types'
+import { REQUEST_LOCATIONS, FUNCTION_TAGS } from '@/lib/types'
 
 function statusColor(status: string) {
   if (status === 'open') return 'bg-green-500/15 text-green-600 border-green-500/30'
@@ -180,6 +181,26 @@ function RequestCard({
       <CardContent className="px-4 pb-4 space-y-3">
         <p className="text-sm text-muted-foreground line-clamp-2">{req.description}</p>
 
+        {/* Multi-interviewer progress */}
+        {(req.interviewer_count ?? 1) > 1 && (
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1">
+              {Array.from({ length: req.interviewer_count ?? 1 }).map((_, i) => (
+                <span
+                  key={i}
+                  className={cn(
+                    'h-2 w-5 rounded-full',
+                    i < (req.confirmed_count ?? 0) ? 'bg-blue-500' : 'bg-muted'
+                  )}
+                />
+              ))}
+            </div>
+            <span className="text-xs text-muted-foreground">
+              {req.confirmed_count ?? 0}/{req.interviewer_count} interviewers confirmed
+            </span>
+          </div>
+        )}
+
         {req.status === 'open' && (
           <>
             {req.interested_seniors.length === 0 ? (
@@ -246,6 +267,8 @@ function NewRequestSheet({
   const [preferredAt, setPreferredAt] = useState('')
   const [background, setBackground] = useState('')
   const [description, setDescription] = useState('')
+  const [interviewerCount, setInterviewerCount] = useState(1)
+  const [functionTag, setFunctionTag] = useState<string>('')
   const sb = createClient()
 
   function submit() {
@@ -256,10 +279,12 @@ function NewRequestSheet({
 
     startTransition(async () => {
       const { data } = await sb.rpc('create_slot_request', {
-        p_location:     location,
-        p_preferred_at: new Date(preferredAt).toISOString(),
-        p_background:   background.trim(),
-        p_description:  description.trim(),
+        p_location:          location,
+        p_preferred_at:      new Date(preferredAt).toISOString(),
+        p_background:        background.trim(),
+        p_description:       description.trim(),
+        p_interviewer_count: interviewerCount,
+        p_function_tag:      functionTag || null,
       })
       if (data?.error) { toast.error(data.error); return }
       navigator.vibrate?.(50)
@@ -275,6 +300,9 @@ function NewRequestSheet({
         matched_at: null,
         created_at: new Date().toISOString(),
         interested_seniors: [],
+        interviewer_count: interviewerCount,
+        confirmed_count: 0,
+        function_tag: functionTag || null,
       }
       onCreated(newReq)
       setOpen(false)
@@ -282,6 +310,8 @@ function NewRequestSheet({
       setPreferredAt('')
       setBackground('')
       setDescription('')
+      setInterviewerCount(1)
+      setFunctionTag('')
     })
   }
 
@@ -324,7 +354,43 @@ function NewRequestSheet({
           </div>
 
           <div className="space-y-1.5">
-            <Label>Your background (shown anonymously to seniors)</Label>
+            <Label>How many interviewers? <span className="text-muted-foreground font-normal">(for PI)</span></Label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4].map(n => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setInterviewerCount(n)}
+                  className={cn(
+                    'flex-1 rounded-xl border py-2 text-sm font-medium transition-colors',
+                    interviewerCount === n
+                      ? 'border-foreground bg-foreground text-background'
+                      : 'border-border hover:bg-secondary'
+                  )}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              For GD sessions, keep this at 1.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Function domain <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <select
+              value={functionTag}
+              onChange={e => setFunctionTag(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">Any function</option>
+              {FUNCTION_TAGS.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Your background <span className="text-muted-foreground font-normal">(shown anonymously)</span></Label>
             <Textarea
               placeholder="E.g. First year, no prior GD practice, Finance background, 2 PI mocks done..."
               value={background}
@@ -381,11 +447,19 @@ export function MyRequestsClient({
 
   function handleConfirmed(requestId: string, seniorId: string, _seniorName: string, _waUrl: string | null) {
     setRequests((prev) =>
-      prev.map((r) =>
-        r.id === requestId
-          ? { ...r, status: 'matched' as const, matched_senior_id: seniorId, matched_at: new Date().toISOString() }
-          : r
-      )
+      prev.map((r) => {
+        if (r.id !== requestId) return r
+        const newConfirmed = (r.confirmed_count ?? 0) + 1
+        const interviewerCount = r.interviewer_count ?? 1
+        const nowMatched = newConfirmed >= interviewerCount
+        return {
+          ...r,
+          confirmed_count: newConfirmed,
+          status: nowMatched ? 'matched' as const : r.status,
+          matched_senior_id: nowMatched ? seniorId : r.matched_senior_id,
+          matched_at: nowMatched ? new Date().toISOString() : r.matched_at,
+        }
+      })
     )
   }
 

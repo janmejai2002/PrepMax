@@ -15,9 +15,16 @@ export default async function RoomsAdminPage() {
 
   if (!user) redirect('/login')
 
-  const [{ data: profile }, { data: rooms }] = await Promise.all([
-    supabase.from('profiles').select('name, is_crisp, is_sac').eq('id', user.id).single(),
+  const nowIso = new Date().toISOString()
+  const [{ data: profile }, { data: rooms }, { data: activeSlots }] = await Promise.all([
+    supabase.from('profiles').select('name, is_crisp, is_sac, can_host_gd, can_host_pi, is_committee').eq('id', user.id).single(),
     supabase.from('rooms').select('*').order('name'),
+    supabase
+      .from('slots')
+      .select('id, room_id, type, topic, start_at, end_at, enrolled_count, capacity, host_id, profiles!host_id(name, whatsapp, phone)')
+      .in('status', ['open', 'full', 'live'])
+      .lte('start_at', nowIso)
+      .gte('end_at', nowIso),
   ])
 
   const canManage = !!(profile?.is_crisp || profile?.is_sac)
@@ -48,7 +55,7 @@ export default async function RoomsAdminPage() {
               <BarChart3 className="h-3.5 w-3.5 inline mr-1" />
               Stats
             </Link>
-            <Link href="/mentor"
+            <Link href="/mentees"
               className="flex-1 rounded-xl border bg-muted px-3 py-2 text-center text-xs font-medium text-muted-foreground hover:bg-card transition-colors">
               <Users className="h-3.5 w-3.5 inline mr-1" />
               Juniors
@@ -61,7 +68,26 @@ export default async function RoomsAdminPage() {
           </div>
         )}
 
-        <RoomsClient initialRooms={rooms ?? []} isSac={isSac} />
+        <RoomsClient
+          initialRooms={rooms ?? []}
+          isSac={isSac}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          occupancy={(activeSlots ?? []).reduce<Record<string, any>>((acc, s) => {
+            if (s.room_id) {
+              const host = Array.isArray(s.profiles) ? s.profiles[0] : s.profiles
+              acc[s.room_id] = {
+                type: s.type,
+                topic: s.topic,
+                enrolled: s.enrolled_count,
+                capacity: s.capacity,
+                host_name: host?.name ?? null,
+                host_whatsapp: host?.whatsapp ?? host?.phone ?? null,
+                end_at: s.end_at,
+              }
+            }
+            return acc
+          }, {})}
+        />
       </div>
       <BottomNav isSac={isSac} isCrisp={isCrisp} isSenior={isSac || isCrisp} />
     </div>

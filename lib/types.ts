@@ -203,6 +203,9 @@ export interface MySlotRequest {
   matched_at: string | null
   created_at: string
   interested_seniors: InterestedSenior[]
+  interviewer_count?: number
+  confirmed_count?: number
+  function_tag?: string | null
 }
 
 export interface OpenRequest {
