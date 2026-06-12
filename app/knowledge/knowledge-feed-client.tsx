@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { BookOpen, Pin, Plus, X, ChevronDown, ChevronUp } from 'lucide-react'
+import { BookOpen, Pin, Plus, X, ChevronDown, ChevronUp, MessageSquare, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -10,6 +10,16 @@ import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import type { KnowledgePost } from '@/lib/types'
 import { FUNCTION_TAGS } from '@/lib/types'
+
+interface ReplyRow {
+  id: string
+  post_id: string
+  parent_id: string | null
+  author_id: string
+  body: string
+  created_at: string
+  author_year: string | null
+}
 
 interface Props {
   initialPosts: KnowledgePost[]
@@ -24,6 +34,14 @@ export function KnowledgeFeedClient({ initialPosts, canPost }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
 
+  // Replies state: postId → replies[]
+  const [repliesMap, setRepliesMap] = useState<Record<string, ReplyRow[]>>({})
+  const [showRepliesId, setShowRepliesId] = useState<string | null>(null)
+  const [replyingToPostId, setReplyingToPostId] = useState<string | null>(null)
+  const [replyBody, setReplyBody] = useState('')
+  const [submittingReply, setSubmittingReply] = useState(false)
+  const [replyError, setReplyError] = useState('')
+
   // Form state
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
@@ -32,6 +50,52 @@ export function KnowledgeFeedClient({ initialPosts, canPost }: Props) {
   const [formErr, setFormErr] = useState('')
 
   const supabase = createClient()
+
+  async function loadReplies(postId: string) {
+    if (repliesMap[postId]) return
+    const { data } = await supabase.rpc('get_post_replies', { p_post_id: postId })
+    setRepliesMap(prev => ({ ...prev, [postId]: (data ?? []) as ReplyRow[] }))
+  }
+
+  async function toggleReplies(postId: string) {
+    if (showRepliesId === postId) {
+      setShowRepliesId(null)
+    } else {
+      await loadReplies(postId)
+      setShowRepliesId(postId)
+    }
+  }
+
+  async function submitReply(postId: string) {
+    setReplyError('')
+    if (replyBody.trim().length < 3) { setReplyError('Too short'); return }
+    setSubmittingReply(true)
+    const { data, error } = await supabase.rpc('add_knowledge_reply', {
+      p_post_id: postId,
+      p_body: replyBody.trim(),
+      p_parent_id: null,
+    })
+    setSubmittingReply(false)
+    if (error || data?.error) {
+      setReplyError(data?.error ?? 'Could not post reply')
+      return
+    }
+    const newReply: ReplyRow = {
+      id: data.id,
+      post_id: postId,
+      parent_id: null,
+      author_id: '',
+      body: replyBody.trim(),
+      created_at: new Date().toISOString(),
+      author_year: null,
+    }
+    setRepliesMap(prev => ({
+      ...prev,
+      [postId]: [...(prev[postId] ?? []), newReply],
+    }))
+    setReplyBody('')
+    setReplyingToPostId(null)
+  }
 
   const filtered = filter === ALL_FILTER
     ? posts
@@ -199,6 +263,74 @@ export function KnowledgeFeedClient({ initialPosts, canPost }: Props) {
                   >
                     {expanded ? <><ChevronUp className="h-3 w-3" /> Show less</> : <><ChevronDown className="h-3 w-3" /> Read more</>}
                   </button>
+                )}
+
+                {/* Replies footer */}
+                <div className="border-t border-border/60 pt-2 flex items-center gap-3">
+                  <button
+                    onClick={() => toggleReplies(post.id)}
+                    className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <MessageSquare className="h-3 w-3" />
+                    {repliesMap[post.id]
+                      ? `${repliesMap[post.id].length} repl${repliesMap[post.id].length !== 1 ? 'ies' : 'y'}`
+                      : 'Replies'
+                    }
+                  </button>
+                  <button
+                    onClick={() => {
+                      setReplyingToPostId(replyingToPostId === post.id ? null : post.id)
+                      if (!showRepliesId || showRepliesId !== post.id) {
+                        toggleReplies(post.id)
+                      }
+                    }}
+                    className="flex items-center gap-1 text-[11px] text-gd font-medium hover:opacity-80 transition-opacity"
+                  >
+                    <Plus className="h-3 w-3" />
+                    Reply
+                  </button>
+                </div>
+
+                {/* Replies list */}
+                {showRepliesId === post.id && (
+                  <div className="space-y-2 pt-1">
+                    {(repliesMap[post.id] ?? []).length === 0 ? (
+                      <p className="text-[11px] text-muted-foreground pl-2">No replies yet. Be the first!</p>
+                    ) : (
+                      (repliesMap[post.id] ?? []).map(reply => (
+                        <div key={reply.id} className="rounded-xl bg-muted/60 px-3 py-2 space-y-0.5">
+                          <p className="text-[11px] text-muted-foreground">
+                            {reply.author_year ? `${reply.author_year} batch` : 'Member'}
+                            {' · '}
+                            {new Date(reply.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                          </p>
+                          <p className="text-sm leading-snug">{reply.body}</p>
+                        </div>
+                      ))
+                    )}
+
+                    {replyingToPostId === post.id && (
+                      <div className="flex gap-2 pt-1">
+                        <Input
+                          value={replyBody}
+                          onChange={e => setReplyBody(e.target.value)}
+                          placeholder="Write a reply…"
+                          maxLength={500}
+                          className="flex-1 text-sm h-9"
+                          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitReply(post.id) } }}
+                        />
+                        <Button
+                          size="icon"
+                          className="h-9 w-9 shrink-0"
+                          disabled={submittingReply}
+                          onClick={() => submitReply(post.id)}
+                        >
+                          <Send className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    )}
+                    {replyError && <p className="text-xs text-destructive">{replyError}</p>}
+                  </div>
                 )}
               </article>
             )

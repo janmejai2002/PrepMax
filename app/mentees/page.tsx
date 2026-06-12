@@ -7,6 +7,7 @@ import { initials } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { Users, AlertCircle } from 'lucide-react'
+import { CreateTaskSheet } from './create-task-sheet'
 
 interface Junior360Row {
   user_id: string
@@ -71,10 +72,21 @@ export default async function MenteesPage() {
       </div>
 
       <div className="mx-auto max-w-md px-4 pt-6">
-        <h1 className="text-xl font-bold mb-1">My Mentees</h1>
-        <p className="text-sm text-muted-foreground mb-5">
-          {mentees.length} junior{mentees.length !== 1 ? 's' : ''} assigned to you
-        </p>
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h1 className="text-xl font-bold mb-0.5">My Mentees</h1>
+            <p className="text-sm text-muted-foreground">
+              {mentees.length} junior{mentees.length !== 1 ? 's' : ''} assigned to you
+            </p>
+          </div>
+          {mentees.length > 0 && (
+            <CreateTaskSheet
+              mentees={mentees.map(m => ({
+                user_id: m.user_id, name: m.name, roll: m.roll,
+              }))}
+            />
+          )}
+        </div>
 
         {mentees.length === 0 ? (
           <div className="py-16 text-center text-muted-foreground">
